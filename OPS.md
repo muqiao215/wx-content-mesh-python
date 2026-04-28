@@ -20,6 +20,14 @@ Practical API result on this account:
 - `stable_token`: works after `AppSecret` is enabled and API IP whitelist is configured.
 - `draft/add`: works.
 - `message/mass/preview`: fails with `48001 api unauthorized`.
+- `freepublish/submit`: should be treated as unavailable by default on this personal unverified account until a different eligible account proves otherwise.
+
+Do not assume this personal account has these capabilities:
+
+- full WeChat official account certification
+- phone preview via `message/mass/preview`
+- privileged automated publish flow
+- mass-send style privileged publish interfaces
 
 Current operating policy for this account:
 
@@ -28,8 +36,8 @@ Current operating policy for this account:
   - cover upload
   - draft creation
   - manual review and manual publish in mp backend
-- Do not assume these are available:
-  - phone preview via `message/mass/preview`
-  - full automated publish via privileged publish APIs
+- Runtime safety defaults in this repo:
+  - `WCM_ALLOW_WECHAT_PREVIEW=false`
+  - `WCM_ALLOW_WECHAT_PUBLISH=false`
 
 If full automated preview/publish is required, switch to an eligible account with the needed platform capability rather than continuing to optimize around this personal account.

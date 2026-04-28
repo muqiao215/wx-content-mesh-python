@@ -89,6 +89,7 @@ class PublishService:
         return article
 
     def send_preview(self, article_id: int, *, touser_openid: str | None = None, towxname: str | None = None) -> dict[str, Any]:
+        self._require_preview_enabled()
         article = self._article(article_id)
         account = self._require_account(article)
         if not article.wx_draft_media_id:
@@ -115,6 +116,7 @@ class PublishService:
             raise
 
     def submit_freepublish(self, article_id: int) -> Article:
+        self._require_publish_enabled()
         article = self._article(article_id)
         account = self._require_account(article)
         if not article.wx_draft_media_id:
@@ -268,6 +270,24 @@ class PublishService:
         if not account:
             raise KeyError(f"wechat account not found: {article.account_id}")
         return account
+
+    def _require_preview_enabled(self) -> None:
+        if self.settings.allow_wechat_preview:
+            return
+        raise ValueError(
+            "WeChat phone preview is disabled. "
+            "Set WCM_ALLOW_WECHAT_PREVIEW=true only after confirming the account has message/mass/preview permission. "
+            "Personal unverified accounts should stay in local-preview + draftbox mode."
+        )
+
+    def _require_publish_enabled(self) -> None:
+        if self.settings.allow_wechat_publish:
+            return
+        raise ValueError(
+            "WeChat freepublish submit is disabled. "
+            "Set WCM_ALLOW_WECHAT_PUBLISH=true only after confirming the account has the required publish permission. "
+            "Personal unverified accounts should stay in draftbox mode."
+        )
 
     def _job(
         self,

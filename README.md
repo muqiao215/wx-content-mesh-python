@@ -58,6 +58,30 @@ Article Markdown
 1. `local_preview_url`：你后台本地的 HTML 预览链接，适合排版审稿。
 2. 微信手机预览：调用 `message/mass/preview` 发送到指定用户。微信接口不会为草稿直接返回一个公开预览 URL。
 
+## 个人号边界
+
+当前仓库已经验证过一个典型个人主体公众号的能力边界：
+
+- 个人主体账号不等于可开通完整 `微信认证`
+- 个人号可以启用 `AppSecret`、配置 IP 白名单、获取 `access_token`
+- 个人号可以创建草稿 `draft/add`
+- 个人号当前没有 `message/mass/preview` 权限，实测返回 `48001 api unauthorized`
+- 对 `freepublish/submit` 这类自动发布能力，不应默认认为个人未认证账号可用
+
+因此，当前项目默认按“草稿箱模式”运行：
+
+- 开 `local preview`
+- 开 `draft/add`
+- 关 `preview`
+- 关 `freepublish/submit`
+
+只有在确认账号能力足够后，才手动打开运行开关：
+
+```bash
+WCM_ALLOW_WECHAT_PREVIEW=true
+WCM_ALLOW_WECHAT_PUBLISH=true
+```
+
 ## 快速开始
 
 ```bash
@@ -112,6 +136,13 @@ python -m wx_content_mesh.cli add-account \
 
 也可以本地测试时直接传 `--secret`，但生产不建议。
 
+默认安全开关：
+
+```bash
+WCM_ALLOW_WECHAT_PREVIEW=false
+WCM_ALLOW_WECHAT_PUBLISH=false
+```
+
 ## 创建文章并预览
 
 ```bash
@@ -151,6 +182,7 @@ python -m wx_content_mesh.cli preview 1 --wxname SOME_WECHAT_ID
 
 - `draft/add` 可用
 - `message/mass/preview` 返回 `48001 api unauthorized`
+- `freepublish/submit` 默认关闭，不对个人未认证号做自动发布假设
 
 所以当前默认工作流应当是：
 

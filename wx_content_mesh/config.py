@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     request_timeout: float = 20.0
     token_margin_seconds: int = 300
     use_stable_token: bool = True
+    allow_wechat_preview: bool = False
+    allow_wechat_publish: bool = False
     app_base_url: str = "http://127.0.0.1:8000"
     default_author: str = ""
     render_theme: str = "wemd_clean"

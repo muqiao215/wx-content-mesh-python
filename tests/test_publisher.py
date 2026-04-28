@@ -52,3 +52,49 @@ def test_poll_publish_status_hydrates_article_url(monkeypatch):
     assert article.status == ArticleStatus.published
     assert article.wx_article_id == "wx_article_1"
     assert article.wx_article_url == "https://mp.weixin.qq.com/s/demo"
+
+
+def test_preview_is_blocked_by_default():
+    db = _session()
+    account = WeChatAccount(name="main", appid="wx_test", raw_secret="secret")
+    db.add(account)
+    db.flush()
+    article = Article(
+        account_id=account.id,
+        title="标题",
+        markdown="正文",
+        wx_draft_media_id="draft_1",
+        status=ArticleStatus.draft_created,
+    )
+    db.add(article)
+    db.flush()
+
+    try:
+        PublishService(db).send_preview(article.id, towxname="demo-user")
+    except ValueError as exc:
+        assert "WCM_ALLOW_WECHAT_PREVIEW=true" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("preview should be blocked by default")
+
+
+def test_publish_is_blocked_by_default():
+    db = _session()
+    account = WeChatAccount(name="main", appid="wx_test", raw_secret="secret")
+    db.add(account)
+    db.flush()
+    article = Article(
+        account_id=account.id,
+        title="标题",
+        markdown="正文",
+        wx_draft_media_id="draft_1",
+        status=ArticleStatus.draft_created,
+    )
+    db.add(article)
+    db.flush()
+
+    try:
+        PublishService(db).submit_freepublish(article.id)
+    except ValueError as exc:
+        assert "WCM_ALLOW_WECHAT_PUBLISH=true" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("publish should be blocked by default")
