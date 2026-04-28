@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import mimetypes
-import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,7 @@ from typing import Any
 import requests
 from sqlalchemy.orm import Session
 
-from ..config import get_settings
+from ..config import get_env_value, get_settings
 from ..models import AccessToken, WeChatAccount
 
 
@@ -44,7 +43,7 @@ class WeChatApiClient:
         if self.account.raw_secret:
             return self.account.raw_secret
         if self.account.secret_env_name:
-            value = os.getenv(self.account.secret_env_name)
+            value = get_env_value(self.account.secret_env_name)
             if value:
                 return value
         raise WeChatError(f"No secret configured for account {self.account.name}")

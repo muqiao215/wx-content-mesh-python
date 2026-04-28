@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -41,3 +42,25 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_dirs()
     return settings
+
+
+@lru_cache(maxsize=1)
+def get_plain_env() -> dict[str, str]:
+    env_file = Path(".env")
+    if not env_file.exists():
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip()
+    return values
+
+
+def get_env_value(name: str) -> str | None:
+    value = os.getenv(name)
+    if value:
+        return value
+    return get_plain_env().get(name)
