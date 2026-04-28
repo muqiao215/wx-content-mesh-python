@@ -1,0 +1,167 @@
+{
+  "academic_paper": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Academic paper style with serif typography, restrained borders, and table-first structure.",
+    "display_name": "Academic Paper",
+    "preview_cover": null,
+    "source": "WeMD official templates",
+    "source_url": "https://github.com/tenngoxars/WeMD/tree/main/templates",
+    "tags": [
+      "academic",
+      "serif",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "bauhaus": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Bauhaus-inspired theme with hard shadows, primary color blocks, and strong geometric contrast.",
+    "display_name": "Bauhaus",
+    "preview_cover": null,
+    "source": "WeMD official templates",
+    "source_url": "https://github.com/tenngoxars/WeMD/tree/main/templates",
+    "tags": [
+      "bold",
+      "geometric",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "default": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Warm editorial template adapted from the local wechat-format skill.",
+    "display_name": "Default Editorial",
+    "preview_cover": null,
+    "source": "local wechat-format template",
+    "source_url": null,
+    "tags": [
+      "editorial",
+      "serif",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "grace": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Soft editorial variant adapted from the local wechat-format skill.",
+    "display_name": "Grace",
+    "preview_cover": null,
+    "source": "local wechat-format template",
+    "source_url": null,
+    "tags": [
+      "soft",
+      "editorial",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "knowledge_base": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Knowledge-base note style with clean blocks, compact headings, and muted structural rhythm.",
+    "display_name": "Knowledge Base",
+    "preview_cover": null,
+    "source": "WeMD official templates",
+    "source_url": "https://github.com/tenngoxars/WeMD/tree/main/templates",
+    "tags": [
+      "knowledge-base",
+      "clean",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "modern": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Modern warm variant adapted from the local wechat-format skill.",
+    "display_name": "Modern",
+    "preview_cover": null,
+    "source": "local wechat-format template",
+    "source_url": null,
+    "tags": [
+      "modern",
+      "warm",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "morandi_forest": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Morandi forest palette with muted green accents and calm long-form reading rhythm.",
+    "display_name": "Morandi Forest",
+    "preview_cover": null,
+    "source": "WeMD official templates",
+    "source_url": "https://github.com/tenngoxars/WeMD/tree/main/templates",
+    "tags": [
+      "morandi",
+      "green",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "receipt": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Receipt-print style with monospace typography, dashed dividers, and compact contrast.",
+    "display_name": "Receipt",
+    "preview_cover": null,
+    "source": "WeMD official templates",
+    "source_url": "https://github.com/tenngoxars/WeMD/tree/main/templates",
+    "tags": [
+      "monospace",
+      "receipt",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "simple": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Simple green editorial variant adapted from the local wechat-format skill.",
+    "display_name": "Simple",
+    "preview_cover": null,
+    "source": "local wechat-format template",
+    "source_url": null,
+    "tags": [
+      "simple",
+      "green",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "wemd_card": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Card-like WeMD-inspired article theme with white content blocks and soft shadows.",
+    "display_name": "WeMD Card",
+    "preview_cover": null,
+    "source": "wx-content-mesh",
+    "source_url": null,
+    "tags": [
+      "card",
+      "wemd-like",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  },
+  "wemd_clean": {
+    "built_in": true,
+    "created_at": "2026-04-28T00:00:00+00:00",
+    "description": "Clean WeMD-inspired baseline theme for stable WeChat inline HTML rendering.",
+    "display_name": "WeMD Clean",
+    "preview_cover": null,
+    "source": "wx-content-mesh",
+    "source_url": null,
+    "tags": [
+      "clean",
+      "wemd-like",
+      "wechat"
+    ],
+    "updated_at": "2026-04-28T00:00:00+00:00"
+  }
+}

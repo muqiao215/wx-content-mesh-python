@@ -97,3 +97,38 @@ class JobOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ThemeMetadataUpdate(BaseModel):
+    display_name: str | None = None
+    description: str | None = None
+    source: str | None = None
+    source_url: str | None = None
+    preview_cover: str | None = None
+    tags: list[str] | None = None
+
+
+class ThemeImportRequest(ThemeMetadataUpdate):
+    name: str
+    css: str
+    overwrite: bool = False
+
+
+class ThemeMetadataOut(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    source: str
+    source_url: str | None
+    preview_cover: str | None
+    tags: list[str]
+    built_in: bool
+    created_at: str | None
+    updated_at: str | None
+
+
+class ThemeOut(BaseModel):
+    name: str
+    css_path: str
+    css_size: int
+    metadata: ThemeMetadataOut

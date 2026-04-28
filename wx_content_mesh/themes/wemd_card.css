@@ -1,0 +1,262 @@
+#wemd {
+  --paper: #fbfaf7;
+  --card: #ffffff;
+  --ink: #222222;
+  --muted: #4b5563;
+  --line: #e7e5e4;
+  --accent: #2563eb;
+  --code-bg: #fff7ed;
+  --code-ink: #c2410c;
+  max-width: 677px;
+  margin: 0 auto;
+  padding: 30px 18px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+#wemd * {
+  box-sizing: border-box;
+}
+
+#wemd h1 {
+  font-size: 25px;
+  line-height: 1.38;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 24px;
+  padding: 22px 18px;
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+#wemd h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 36px 0 18px;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.045);
+}
+
+#wemd h2 + p {
+  margin-top: 6px;
+}
+
+#wemd h3 {
+  font-size: 18px;
+  font-weight: 750;
+  color: #374151;
+  margin: 28px 0 12px;
+}
+
+#wemd p {
+  margin: 13px 0;
+  color: #2d2d2d;
+  line-height: 1.9;
+}
+
+#wemd strong {
+  font-weight: 800;
+  color: #0f172a;
+  background: linear-gradient(transparent 62%, #fde68a 0);
+}
+
+#wemd em {
+  font-style: normal;
+  color: #9a3412;
+}
+
+#wemd blockquote {
+  margin: 22px 0;
+  padding: 16px 18px;
+  background: var(--card);
+  border-radius: 16px;
+  color: var(--muted);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+#wemd blockquote p a {
+  color: var(--accent);
+  border-bottom: 1px dotted #93c5fd;
+}
+
+#wemd code,
+#wemd pre {
+  font-family: Menlo, Consolas, monospace;
+}
+
+#wemd code {
+  font-size: 90%;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+#wemd pre {
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 14px;
+  overflow: auto;
+  line-height: 1.65;
+  font-size: 13px;
+}
+
+#wemd pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  white-space: pre;
+}
+
+#wemd a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted #93c5fd;
+  word-break: break-all;
+}
+
+#wemd img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 18px auto;
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+}
+
+#wemd table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 20px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#wemd th,
+#wemd td {
+  border: 1px solid #eeeeee;
+  padding: 8px 9px;
+}
+
+#wemd th {
+  background: #f3f4f6;
+  font-weight: 750;
+  color: #111;
+}
+
+#wemd td {
+  color: #333;
+}
+
+#wemd ul,
+#wemd ol {
+  margin: 12px 0;
+  padding-left: 1.2em;
+  color: #333;
+}
+
+#wemd li {
+  margin: 6px 0;
+  line-height: 1.75;
+}
+
+#wemd hr {
+  border: none;
+  border-top: 1px dashed #d6d3d1;
+  margin: 30px 0;
+}
+
+#wemd .card {
+  margin: 20px 0;
+  padding: 16px 18px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+#wemd .card strong {
+  color: var(--accent);
+}
+
+#wemd .callout {
+  margin: 22px 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+#wemd .callout .callout-title {
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+#wemd .callout-note {
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+#wemd .callout-tip {
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+#wemd .callout-important {
+  border: 1px solid #c4b5fd;
+  color: #5b21b6;
+}
+
+#wemd .callout-warning {
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+#wemd .callout-caution {
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+#wemd .toc,
+#wemd .citations {
+  margin: 0 0 26px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+#wemd .toc .toc-title,
+#wemd .citations h2 {
+  margin: 0 0 8px;
+  font-weight: 800;
+  color: #334155;
+}
+
+#wemd .toc .toc-item-h3 {
+  padding-left: 1em;
+}
+
+#wemd .citations ol {
+  padding-left: 1.2rem;
+}
+
+#wemd .citations .citation-label {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}

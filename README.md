@@ -11,6 +11,51 @@ Python-only 架构源码：把 wxAiPost 适合借鉴的「后台/发布链路」
 - 排版层单独实现：Markdown -> 微信兼容 inline HTML -> 本地手机宽度预览 -> 草稿。
 - 小红书采用安全导出包，不做绕过登录/风控的自动化。
 
+## 排版引擎
+
+当前 renderer 已经从“标签级 style dict”切到“主题 CSS 编译成 inline HTML”。
+
+实际链路是：
+
+```text
+theme stylesheet
+  -> selector 匹配
+  -> specificity / cascade
+  -> CSS 变量解析
+  -> inline style 输出
+  -> 微信公众号 HTML
+```
+
+当前已经覆盖：
+
+- `.class`
+- `#id`
+- `h2 + p`
+- `.card strong`
+- `blockquote p a`
+- `--color-primary` 这类 CSS 变量
+- 整份主题 CSS 编译后再 inline
+
+主题文件在 [wx_content_mesh/themes](C:\Users\11614\Desktop\wx_content_mesh_python\wx_content_mesh_python\wx_content_mesh\themes)：
+
+- `wemd_clean`
+- `wemd_card`
+- `default`
+- `grace`
+- `simple`
+- `modern`
+- `academic_paper`
+- `bauhaus`
+- `knowledge_base`
+- `morandi_forest`
+- `receipt`
+
+其中：
+
+- `default / grace / simple / modern` 复用了本地 `wechat-format` 内置模板结构，再改成 Python 侧可直接编译的主题 CSS。
+- `academic_paper / bauhaus / knowledge_base / morandi_forest / receipt` 迁自 WeMD 官方模板目录，并适配到当前 `#wemd` + inline 编译链路。
+- `wemd_clean / wemd_card` 是偏 WeMD 取向的公众号正文主题。
+
 ## 目录
 
 ```text
@@ -117,6 +162,65 @@ http://127.0.0.1:8000/docs
 ```bash
 python examples/demo_local.py
 ```
+
+也可以直接切主题重渲染：
+
+```bash
+python -m wx_content_mesh.cli render 1 --theme default
+python -m wx_content_mesh.cli render 1 --theme grace
+python -m wx_content_mesh.cli render 1 --theme wemd_card
+```
+
+主题预览画廊：
+
+```text
+http://127.0.0.1:8001/preview/themes
+```
+
+如果你已经有文章数据，也可以直接带文章 id 对比：
+
+```text
+http://127.0.0.1:8001/preview/themes?article_id=1
+```
+
+主题管理接口：
+
+```text
+GET  /themes
+GET  /themes/{theme_name}/css
+POST /themes/import
+POST /themes/import-file
+PUT  /themes/{theme_name}/metadata
+```
+
+JSON 导入 CSS 模板：
+
+```bash
+curl -X POST http://127.0.0.1:8001/themes/import \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my_theme",
+    "display_name": "My Theme",
+    "description": "自定义公众号 CSS 模板",
+    "source": "user",
+    "tags": ["custom", "wechat"],
+    "overwrite": false,
+    "css": "#wemd { color: #222; } #wemd h2 + p { margin-top: 4px; }"
+  }'
+```
+
+文件上传导入：
+
+```bash
+curl -X POST http://127.0.0.1:8001/themes/import-file \
+  -F "file=@./my_theme.css" \
+  -F "name=my_theme" \
+  -F "display_name=My Theme" \
+  -F "source=user" \
+  -F "tags=custom,wechat"
+```
+
+主题元数据集中保存在 [wx_content_mesh/themes/metadata.json](C:\Users\11614\Desktop\wx_content_mesh_python\wx_content_mesh_python\wx_content_mesh\themes\metadata.json)。新导入的主题会自动写入这份文件；已有主题可通过 `PUT /themes/{theme_name}/metadata` 修改名称、说明、来源、预览封面和标签。
 
 ## 配置公众号账号
 
@@ -230,5 +334,7 @@ pytest -q
 当前测试覆盖：
 
 - Markdown -> 微信 inline HTML、callout、目录、外链脚注。
+- `.class` / `#id` / 相邻兄弟 / 后代选择器 / CSS 变量解析。
+- CSS 模板导入、主题元数据、主题管理接口。
 - 图片素材建档与同账号去重。
 - freepublish 状态轮询与正式文章 URL 回填。
