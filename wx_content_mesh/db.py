@@ -25,10 +25,29 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 
 def init_db() -> None:
-    # Import models so SQLAlchemy metadata is populated.
     from . import models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    _repair_invalid_enums()
+
+
+def _repair_invalid_enums() -> None:
+    from .models import ArticleStatus
+
+    valid = {e.value for e in ArticleStatus}
+    with engine.connect() as conn:
+        rows = conn.execute(
+            __import__("sqlalchemy").text("SELECT rowid, status FROM articles")
+        ).fetchall()
+        for rowid, status in rows:
+            if status not in valid:
+                conn.execute(
+                    __import__("sqlalchemy").text(
+                        "UPDATE articles SET status='created' WHERE rowid=:rid"
+                    ),
+                    {"rid": rowid},
+                )
+        conn.commit()
 
 
 @contextmanager
