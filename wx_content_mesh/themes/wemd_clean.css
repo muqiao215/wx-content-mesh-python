@@ -23,7 +23,7 @@
   --callout-caution-ink: #7f1d1d;
   max-width: 677px;
   margin: 0 auto;
-  padding: 28px 18px;
+  padding: 28px 0;
   background: var(--paper);
   color: var(--ink);
   font-size: 16px;
