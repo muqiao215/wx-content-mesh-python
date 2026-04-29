@@ -1,0 +1,2 @@
+[console_scripts]
+wx-content-mesh = wx_content_mesh.cli:main

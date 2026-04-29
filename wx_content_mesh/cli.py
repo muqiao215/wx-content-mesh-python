@@ -35,7 +35,8 @@ def cmd_add_account(args: argparse.Namespace) -> None:
 
 def cmd_create_article(args: argparse.Namespace) -> None:
     init_db()
-    markdown = Path(args.markdown).read_text(encoding="utf-8")
+    md_path = Path(args.markdown).resolve()
+    markdown = md_path.read_text(encoding="utf-8")
     with db_session() as db:
         article = PublishService(db).create_article(
             account_id=args.account_id,
@@ -47,6 +48,8 @@ def cmd_create_article(args: argparse.Namespace) -> None:
             content_source_url=args.content_source_url,
             theme=args.theme,
         )
+        article.meta = {**(article.meta or {}), "source_path": str(md_path)}
+        db.flush()
         print(f"created article id={article.id}")
 
 

@@ -27,3 +27,26 @@ def test_materialize_asset_reuses_existing_row(tmp_path: Path):
     assert first_blob.sha256 == second_blob.sha256
     assert first.width == 16
     assert first.height == 12
+
+
+def test_prepare_asset_for_wechat_converts_svg_to_png(tmp_path: Path):
+    svg_path = tmp_path / "diagram.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+        <rect width="120" height="80" fill="#ffffff"/>
+        <circle cx="40" cy="40" r="24" fill="#4a90e2"/>
+        <rect x="68" y="20" width="28" height="40" fill="#43aa8b"/>
+        </svg>""",
+        encoding="utf-8",
+    )
+    db = _session()
+
+    service = ImageService(db)
+    asset, blob = service.prepare_asset_for_wechat(account_id=1, source=str(svg_path), purpose="inline")
+
+    assert asset.id is not None
+    assert blob.path.suffix.lower() == ".png"
+    assert blob.mime_type == "image/png"
+    assert blob.width == 120
+    assert blob.height == 80
+    assert blob.path.exists()

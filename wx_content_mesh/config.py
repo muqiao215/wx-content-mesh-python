@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/wx_content_mesh.db"
     output_dir: Path = Path("./outputs")
     upload_dir: Path = Path("./uploads")
+    source_repo_dir: Path = Path("/root/workspace/xueyu-gongzhonghao")
+    article_outbox_dir: Path = Path("/srv/self-media-exchange/outbox/wechat-article-files")
+    video_outbox_dir: Path = Path("/srv/self-media-exchange/outbox/wechat-video-delivery")
     request_timeout: float = 20.0
     token_margin_seconds: int = 300
     use_stable_token: bool = True
@@ -34,6 +37,8 @@ class Settings(BaseSettings):
     def ensure_dirs(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
+        self.article_outbox_dir.mkdir(parents=True, exist_ok=True)
+        self.video_outbox_dir.mkdir(parents=True, exist_ok=True)
         if self.database_url.startswith("sqlite:///"):
             db_path = Path(self.database_url.replace("sqlite:///", ""))
             db_path.parent.mkdir(parents=True, exist_ok=True)

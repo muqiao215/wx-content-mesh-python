@@ -30,3 +30,10 @@ dev = [
   "pytest>=8.0.0",
   "httpx>=0.28.0"
 ]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["wx_content_mesh"]

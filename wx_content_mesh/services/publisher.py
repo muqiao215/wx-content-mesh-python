@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
@@ -35,7 +35,8 @@ class PublishService:
         if upload_inline_images:
             account = self._require_account(article)
             client = WeChatApiClient(self.session, account)
-            html = renderer.replace_image_sources(html, lambda src: self._upload_inline(account, client, src))
+            markdown_dir = self._resolve_markdown_dir(article)
+            html = renderer.replace_image_sources(html, lambda src: self._upload_inline(account, client, src, base_dir=markdown_dir))
         out = self.settings.output_dir / f"article_{article.id}" / "wechat_preview.html"
         renderer.save_preview(html, out, page_title=article.title)
         article.html = html
@@ -62,7 +63,7 @@ class PublishService:
             "thumb_media_id": cover_media_id,
             "author": (article.author or account.author or self.settings.default_author or "")[:16],
             "digest": (article.digest or self._auto_digest(article.markdown))[:128],
-            "content": article.html,
+            "content": self._prepare_wechat_draft_content(article, article.html),
             "content_source_url": (article.content_source_url or "")[:1024],
             "need_open_comment": 0,
             "only_fans_can_comment": 0,
@@ -199,7 +200,7 @@ class PublishService:
             return account.default_cover_media_id
         if not article.cover_source:
             raise ValueError("cover_source or account.default_cover_media_id is required for WeChat draft")
-        asset, blob = self.image_service.materialize_asset(account_id=account.id, source=article.cover_source, purpose="cover")
+        asset, blob = self.image_service.prepare_asset_for_wechat(account_id=account.id, source=article.cover_source, purpose="cover")
         if asset.media_id and not force_reupload:
             article.cover_media_id = asset.media_id
             return asset.media_id
@@ -212,8 +213,15 @@ class PublishService:
         article.cover_media_id = asset.media_id
         return asset.media_id
 
-    def _upload_inline(self, account: WeChatAccount, client: WeChatApiClient, src: str) -> str:
-        asset, blob = self.image_service.materialize_asset(account_id=account.id, source=src, purpose="inline")
+    def _upload_inline(self, account: WeChatAccount, client: WeChatApiClient, src: str, *, base_dir: Path | None = None) -> str:
+        from urllib.parse import unquote
+        decoded = unquote(src)
+        resolved = decoded
+        if base_dir and not decoded.startswith(("http://", "https://", "/")):
+            candidate = (base_dir / Path(decoded)).resolve()
+            if candidate.exists():
+                resolved = str(candidate)
+        asset, blob = self.image_service.prepare_asset_for_wechat(account_id=account.id, source=resolved, purpose="inline")
         if asset.wx_url:
             return asset.wx_url
         payload = client.upload_inline_image(blob.path)
@@ -245,6 +253,66 @@ class PublishService:
         if len(content.encode("utf-8")) >= 1 * 1024 * 1024:
             raise ValueError("WeChat draft content must be under 1MB")
 
+    def _prepare_wechat_draft_content(self, article: Article, content: str | None) -> str:
+        if not content:
+            self._validate_draft_content(content)
+            return content or ""
+
+        original_chars = len(content)
+        original_bytes = len(content.encode("utf-8"))
+        optimized = content
+        applied = False
+
+        if original_chars >= 20_000 or original_bytes >= 1 * 1024 * 1024:
+            candidate = self._compact_wechat_html(content)
+            if len(candidate) < original_chars or len(candidate.encode("utf-8")) < original_bytes:
+                optimized = candidate
+                applied = True
+
+        meta = {**(article.meta or {})}
+        meta["wechat_draft_compaction"] = {
+            "applied": applied,
+            "original_chars": original_chars,
+            "final_chars": len(optimized),
+            "original_bytes": original_bytes,
+            "final_bytes": len(optimized.encode("utf-8")),
+        }
+        article.meta = meta
+
+        self._validate_draft_content(optimized)
+        return optimized
+
+    @staticmethod
+    def _compact_wechat_html(content: str) -> str:
+        soup = BeautifulSoup(content, "html.parser")
+
+        for comment in soup.find_all(string=lambda value: isinstance(value, Comment)):
+            comment.extract()
+
+        for tag in soup.find_all(True):
+            for attr in list(tag.attrs):
+                if attr == "style":
+                    continue
+                if attr in {"class", "id"} or attr.startswith("data-"):
+                    del tag.attrs[attr]
+            if "style" in tag.attrs:
+                style = tag.attrs["style"]
+                if isinstance(style, list):
+                    style = " ".join(str(part) for part in style)
+                style = re.sub(r"\s*;\s*", ";", str(style).strip())
+                style = re.sub(r"\s*:\s*", ":", style)
+                style = re.sub(r";+$", "", style)
+                if style:
+                    tag.attrs["style"] = style
+                else:
+                    del tag.attrs["style"]
+
+        compacted = str(soup)
+        compacted = re.sub(r">\s+<", "><", compacted)
+        compacted = re.sub(r"\n+", "", compacted)
+        compacted = re.sub(r"\s{2,}", " ", compacted)
+        return compacted.strip()
+
     @staticmethod
     def _article_url_from_publish_status(payload: dict[str, Any]) -> str | None:
         detail = payload.get("article_detail")
@@ -270,6 +338,16 @@ class PublishService:
         if not account:
             raise KeyError(f"wechat account not found: {article.account_id}")
         return account
+
+    @staticmethod
+    def _resolve_markdown_dir(article: Article) -> Path | None:
+        meta = article.meta or {}
+        source = meta.get("source_path")
+        if source:
+            p = Path(source)
+            if p.is_file():
+                return p.parent
+        return None
 
     def _require_preview_enabled(self) -> None:
         if self.settings.allow_wechat_preview:
