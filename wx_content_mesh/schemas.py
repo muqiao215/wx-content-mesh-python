@@ -46,6 +46,76 @@ class ArticleCreate(BaseModel):
     meta: dict[str, Any] | None = None
 
 
+class HtmlDraftOptions(BaseModel):
+    upload_inline_images: bool = True
+    force_reupload_cover: bool = False
+    create_local_preview: bool = True
+
+
+class HtmlDraftCreate(BaseModel):
+    account_id: int
+    title: str = Field(max_length=32)
+    html: str = Field(min_length=1)
+    asset_base_dir: str | None = None
+    author: str | None = None
+    digest: str | None = Field(default=None, max_length=128)
+    cover_source: str | None = None
+    content_source_url: str | None = None
+    meta: dict[str, Any] | None = None
+    options: HtmlDraftOptions = Field(default_factory=HtmlDraftOptions)
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "account_id": 1,
+                "title": "多 Agent 运行时治理",
+                "html": "<section><h1>多 Agent 运行时治理</h1><p>正文</p><img src=\"./assets/diagram.png\"/></section>",
+                "asset_base_dir": "/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive/posts/runtime-governance",
+                "author": "木乔",
+                "digest": "把已渲染好的微信公众号 HTML 直接送入草稿链路。",
+                "cover_source": "./assets/cover.png",
+                "content_source_url": "https://example.com/source",
+                "meta": {"source_kind": "external_html", "pipeline": "visual-renderer"},
+                "options": {
+                    "upload_inline_images": True,
+                    "force_reupload_cover": False,
+                    "create_local_preview": True,
+                },
+            }
+        }
+    }
+
+
+class HtmlDraftFileCreate(BaseModel):
+    account_id: int
+    html_path: str = Field(min_length=1)
+    title: str | None = Field(default=None, max_length=32)
+    asset_base_dir: str | None = None
+    author: str | None = None
+    digest: str | None = Field(default=None, max_length=128)
+    cover_source: str | None = None
+    content_source_url: str | None = None
+    meta: dict[str, Any] | None = None
+    options: HtmlDraftOptions = Field(default_factory=HtmlDraftOptions)
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "account_id": 1,
+                "html_path": "/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive/posts/runtime-governance/final.html",
+                "title": "多 Agent 运行时治理",
+                "cover_source": "./assets/cover.png",
+                "meta": {"source_kind": "rendered_html_file"},
+                "options": {
+                    "upload_inline_images": True,
+                    "force_reupload_cover": False,
+                    "create_local_preview": True,
+                },
+            }
+        }
+    }
+
+
 class ArticleOut(BaseModel):
     id: int
     account_id: int | None

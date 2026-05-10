@@ -204,3 +204,77 @@ def test_create_wechat_draft_compacts_oversized_html_before_validation(monkeypat
     assert len(captured["content"]) < 20_000
     assert article.meta is not None
     assert article.meta["wechat_draft_compaction"]["applied"] is True
+
+
+def test_create_html_draft_uses_prerendered_html_without_markdown_rerender(monkeypatch, tmp_path: Path):
+    import wx_content_mesh.services.publisher as publisher_module
+
+    uploaded: dict[str, list[str]] = {"inline": [], "cover": []}
+    captured: dict[str, str] = {}
+
+    class FakeDraftClient:
+        def __init__(self, session, account):
+            self.session = session
+            self.account = account
+
+        def upload_inline_image(self, image_path: str):
+            uploaded["inline"].append(image_path)
+            return {"url": f"https://mmbiz.qpic.cn/{Path(image_path).name}"}
+
+        def upload_permanent_image(self, image_path: str):
+            uploaded["cover"].append(image_path)
+            return {"media_id": "cover_media_html", "url": f"https://mmbiz.qpic.cn/{Path(image_path).name}"}
+
+        def add_draft(self, articles):
+            captured["content"] = articles[0]["content"]
+            captured["digest"] = articles[0]["digest"]
+            return {"media_id": "draft_html_1"}
+
+    monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeDraftClient)
+
+    asset_dir = tmp_path / "assets"
+    asset_dir.mkdir()
+    inline = asset_dir / "inline.png"
+    cover = asset_dir / "cover.png"
+    inline.write_bytes(
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\xff\xff?"
+        b"\x00\x05\xfe\x02\xfeA\xde\xfc\xbb\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    cover.write_bytes(inline.read_bytes())
+
+    db = _session()
+    account = WeChatAccount(name="main", appid="wx_test", raw_secret="secret")
+    db.add(account)
+    db.flush()
+
+    article = PublishService(db).create_html_draft(
+        account_id=account.id,
+        title="HTML 文章",
+        html='''<section id="external" class="editor-shell" data-node="a1">
+        <!-- remove me -->
+        <h1>Already Rendered</h1>
+        <img data-src="inline.png" width="160" />
+        </section>''',
+        asset_base_dir=str(asset_dir),
+        cover_source="cover.png",
+        create_local_preview=True,
+    )
+
+    assert article.status == ArticleStatus.draft_created
+    assert article.markdown == ""
+    assert article.theme == "html"
+    assert article.wx_draft_media_id == "draft_html_1"
+    assert article.local_preview_path
+    assert Path(article.local_preview_path).exists()
+    assert [str(path) for path in uploaded["inline"]] == [str(inline.resolve())]
+    assert [str(path) for path in uploaded["cover"]] == [str(cover.resolve())]
+    assert "Already Rendered" in captured["content"]
+    assert "theme-wemd_clean" not in captured["content"]
+    assert "https://mmbiz.qpic.cn/inline.png" in captured["content"]
+    assert "<!-- remove me -->" not in captured["content"]
+    assert 'width="160"' not in captured["content"]
+    assert 'style="width:160px"' in captured["content"]
+    assert captured["digest"] == "Already Rendered"
+    assert article.meta is not None
+    assert article.meta["content_ingress"] == "html"

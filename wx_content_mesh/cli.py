@@ -93,6 +93,27 @@ def cmd_draft(args: argparse.Namespace) -> None:
         print(f"draft media_id={article.wx_draft_media_id}")
 
 
+def cmd_html_draft(args: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        article = PublishService(db).create_html_file_draft(
+            account_id=args.account_id,
+            html_path=args.html,
+            title=args.title,
+            asset_base_dir=args.asset_base_dir,
+            author=args.author,
+            digest=args.digest,
+            cover_source=args.cover,
+            content_source_url=args.content_source_url,
+            meta=None,
+            upload_inline_images=not args.no_upload_inline_images,
+            force_reupload_cover=args.force_reupload_cover,
+            create_local_preview=not args.no_local_preview,
+        )
+        print(f"article_id={article.id}")
+        print(f"draft media_id={article.wx_draft_media_id}")
+
+
 def cmd_preview(args: argparse.Namespace) -> None:
     init_db()
     with db_session() as db:
@@ -180,6 +201,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("article_id", type=int)
     s.add_argument("--no-upload-inline-images", action="store_true")
     s.set_defaults(func=cmd_draft)
+
+    s = sub.add_parser("html-draft")
+    s.add_argument("--account-id", type=int, required=True)
+    s.add_argument("--html", required=True)
+    s.add_argument("--title")
+    s.add_argument("--asset-base-dir")
+    s.add_argument("--cover")
+    s.add_argument("--author")
+    s.add_argument("--digest")
+    s.add_argument("--content-source-url")
+    s.add_argument("--no-upload-inline-images", action="store_true")
+    s.add_argument("--force-reupload-cover", action="store_true")
+    s.add_argument("--no-local-preview", action="store_true")
+    s.set_defaults(func=cmd_html_draft)
 
     s = sub.add_parser("preview")
     s.add_argument("article_id", type=int)

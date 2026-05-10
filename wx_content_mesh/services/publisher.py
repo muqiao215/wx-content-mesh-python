@@ -5,11 +5,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
 from ..models import Article, ArticleStatus, JobStatus, MediaAsset, PublishChannel, PublishJob, WeChatAccount
+from .html_normalizer import HtmlNormalizer
 from .image_service import ImageService
 from .renderer import WeChatMarkdownRenderer
 from .wechat_client import WeChatApiClient, WeChatError
@@ -20,10 +21,130 @@ class PublishService:
         self.session = session
         self.settings = get_settings()
         self.image_service = ImageService(session)
+        self.html_normalizer = HtmlNormalizer()
 
     def create_article(self, **kwargs: Any) -> Article:
         article = Article(**kwargs)
         self.session.add(article)
+        self.session.flush()
+        return article
+
+    def create_html_draft(
+        self,
+        *,
+        account_id: int,
+        title: str,
+        html: str,
+        asset_base_dir: str | None = None,
+        author: str | None = None,
+        digest: str | None = None,
+        cover_source: str | None = None,
+        content_source_url: str | None = None,
+        meta: dict[str, Any] | None = None,
+        upload_inline_images: bool = True,
+        force_reupload_cover: bool = False,
+        create_local_preview: bool = True,
+    ) -> Article:
+        account = self.session.get(WeChatAccount, account_id)
+        if not account:
+            raise KeyError(f"wechat account not found: {account_id}")
+        if not html.strip():
+            raise ValueError("html is required")
+
+        article_meta = {**(meta or {}), "content_ingress": "html"}
+        if asset_base_dir:
+            article_meta["asset_base_dir"] = str(Path(asset_base_dir).expanduser().resolve())
+
+        article = self.create_article(
+            account_id=account_id,
+            title=title,
+            markdown="",
+            html=html,
+            author=author,
+            digest=digest,
+            cover_source=cover_source,
+            content_source_url=content_source_url,
+            theme="html",
+            meta=article_meta,
+        )
+        self.prepare_html_article(
+            article.id,
+            upload_inline_images=upload_inline_images,
+            create_local_preview=create_local_preview,
+        )
+        return self.create_wechat_draft(
+            article.id,
+            upload_inline_images=False,
+            force_reupload_cover=force_reupload_cover,
+        )
+
+    def create_html_file_draft(
+        self,
+        *,
+        account_id: int,
+        html_path: str,
+        title: str | None = None,
+        asset_base_dir: str | None = None,
+        author: str | None = None,
+        digest: str | None = None,
+        cover_source: str | None = None,
+        content_source_url: str | None = None,
+        meta: dict[str, Any] | None = None,
+        upload_inline_images: bool = True,
+        force_reupload_cover: bool = False,
+        create_local_preview: bool = True,
+    ) -> Article:
+        path = Path(html_path).expanduser().resolve()
+        if not path.exists() or not path.is_file():
+            raise ValueError(f"html file not found: {path}")
+
+        html = path.read_text(encoding="utf-8")
+        final_title = title or path.stem[:32]
+        final_asset_base_dir = asset_base_dir or str(path.parent)
+        article_meta = {**(meta or {}), "source_html_path": str(path)}
+
+        return self.create_html_draft(
+            account_id=account_id,
+            title=final_title,
+            html=html,
+            asset_base_dir=final_asset_base_dir,
+            author=author,
+            digest=digest,
+            cover_source=cover_source,
+            content_source_url=content_source_url,
+            meta=article_meta,
+            upload_inline_images=upload_inline_images,
+            force_reupload_cover=force_reupload_cover,
+            create_local_preview=create_local_preview,
+        )
+
+    def prepare_html_article(
+        self,
+        article_id: int,
+        *,
+        upload_inline_images: bool = True,
+        create_local_preview: bool = True,
+    ) -> Article:
+        article = self._article(article_id)
+        if not article.html:
+            raise ValueError("article.html is required")
+        html = self.html_normalizer.normalize(article.html)
+        article.html = html
+        if upload_inline_images:
+            account = self._require_account(article)
+            client = WeChatApiClient(self.session, account)
+            html = WeChatMarkdownRenderer().replace_image_sources(
+                html,
+                lambda src: self._upload_inline(account, client, src, base_dir=self._resolve_asset_base_dir(article)),
+            )
+            article.html = html
+        if create_local_preview:
+            out = self.settings.output_dir / f"article_{article.id}" / "wechat_preview.html"
+            WeChatMarkdownRenderer().save_preview(html, out, page_title=article.title)
+            article.local_preview_path = str(out)
+            article.meta = {**(article.meta or {}), "local_preview_url": f"{self.settings.app_base_url}/preview/article/{article.id}"}
+            self._job(article, PublishChannel.local_preview, JobStatus.success, response={"path": str(out)})
+        article.status = ArticleStatus.rendered
         self.session.flush()
         return article
 
@@ -62,7 +183,7 @@ class PublishService:
             "title": article.title[:32],
             "thumb_media_id": cover_media_id,
             "author": (article.author or account.author or self.settings.default_author or "")[:16],
-            "digest": (article.digest or self._auto_digest(article.markdown))[:128],
+            "digest": (article.digest or self._auto_digest(article.markdown or article.html or ""))[:128],
             "content": self._prepare_wechat_draft_content(article, article.html),
             "content_source_url": (article.content_source_url or "")[:1024],
             "need_open_comment": 0,
@@ -200,7 +321,8 @@ class PublishService:
             return account.default_cover_media_id
         if not article.cover_source:
             raise ValueError("cover_source or account.default_cover_media_id is required for WeChat draft")
-        asset, blob = self.image_service.prepare_asset_for_wechat(account_id=account.id, source=article.cover_source, purpose="cover")
+        cover_source = self._resolve_image_source(article, article.cover_source)
+        asset, blob = self.image_service.prepare_asset_for_wechat(account_id=account.id, source=cover_source, purpose="cover")
         if asset.media_id and not force_reupload:
             article.cover_media_id = asset.media_id
             return asset.media_id
@@ -234,6 +356,11 @@ class PublishService:
 
     @staticmethod
     def _auto_digest(markdown: str) -> str:
+        if "<" in markdown and ">" in markdown:
+            html_text = BeautifulSoup(markdown, "html.parser").get_text(" ")
+            html_text = " ".join(html_text.split())
+            if html_text:
+                return html_text[:100]
         text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", markdown)
         text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
         text = re.sub(r"^#{1,6}\s*", "", text, flags=re.M)
@@ -284,34 +411,7 @@ class PublishService:
 
     @staticmethod
     def _compact_wechat_html(content: str) -> str:
-        soup = BeautifulSoup(content, "html.parser")
-
-        for comment in soup.find_all(string=lambda value: isinstance(value, Comment)):
-            comment.extract()
-
-        for tag in soup.find_all(True):
-            for attr in list(tag.attrs):
-                if attr == "style":
-                    continue
-                if attr in {"class", "id"} or attr.startswith("data-"):
-                    del tag.attrs[attr]
-            if "style" in tag.attrs:
-                style = tag.attrs["style"]
-                if isinstance(style, list):
-                    style = " ".join(str(part) for part in style)
-                style = re.sub(r"\s*;\s*", ";", str(style).strip())
-                style = re.sub(r"\s*:\s*", ":", style)
-                style = re.sub(r";+$", "", style)
-                if style:
-                    tag.attrs["style"] = style
-                else:
-                    del tag.attrs["style"]
-
-        compacted = str(soup)
-        compacted = re.sub(r">\s+<", "><", compacted)
-        compacted = re.sub(r"\n+", "", compacted)
-        compacted = re.sub(r"\s{2,}", " ", compacted)
-        return compacted.strip()
+        return HtmlNormalizer().compact(content)
 
     @staticmethod
     def _article_url_from_publish_status(payload: dict[str, Any]) -> str | None:
@@ -348,6 +448,26 @@ class PublishService:
             if p.is_file():
                 return p.parent
         return None
+
+    @staticmethod
+    def _resolve_asset_base_dir(article: Article) -> Path | None:
+        meta = article.meta or {}
+        source = meta.get("asset_base_dir")
+        if source:
+            return Path(source)
+        return PublishService._resolve_markdown_dir(article)
+
+    @staticmethod
+    def _resolve_image_source(article: Article, source: str) -> str:
+        if source.startswith(("http://", "https://", "/")):
+            return source
+        base_dir = PublishService._resolve_asset_base_dir(article)
+        if not base_dir:
+            return source
+        candidate = (base_dir / Path(source)).resolve()
+        if candidate.exists():
+            return str(candidate)
+        return source
 
     def _require_preview_enabled(self) -> None:
         if self.settings.allow_wechat_preview:
