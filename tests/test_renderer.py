@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 
+from wx_content_mesh.services.obsidian_assets import ObsidianAssetAdapter
 from wx_content_mesh.services.renderer import WeChatMarkdownRenderer
 
 
@@ -67,10 +68,26 @@ def test_renderer_resolves_css_variables_and_root_id_theme():
     root = soup.find(id="wemd")
     paragraph = root.find("p")
 
-    assert "background:#fffdf8" in _styles(root)
-    assert "border:1px solid #ddd2c5" in _styles(root)
+    assert "background:transparent" in _styles(root)
+    assert "font-family:\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", serif" in _styles(root)
+    assert "line-height:1.86" in _styles(root)
+    assert "border:1px solid #ddd2c5" not in _styles(root)
     assert "var(" not in _styles(root)
     assert "color:#2d2a26" in _styles(paragraph)
+
+
+def test_refactored_themes_share_body_first_root_without_card_shell():
+    for theme_name in ("wechat_baseline", "wemd_clean", "default", "wemd_card"):
+        html = WeChatMarkdownRenderer(theme_name).render("# 标题\n\n正文")
+        soup = BeautifulSoup(html, "html.parser")
+        root = soup.find(id="wemd")
+        styles = root.get("style", "")
+
+        assert "font-size:16px" in styles
+        assert "background:transparent" in styles
+        assert "max-width" not in styles
+        assert "margin:0 auto" not in styles
+        assert "box-shadow" not in styles
 
 
 def test_renderer_lists_builtin_themes():
@@ -85,6 +102,7 @@ def test_renderer_lists_builtin_themes():
         "morandi_forest",
         "receipt",
         "simple",
+        "wechat_baseline",
         "wemd_card",
         "wemd_clean",
     }.issubset(set(themes))
@@ -99,3 +117,94 @@ def test_renderer_wraps_heading_content_for_wemd_templates():
     assert content is not None
     assert content.get_text(strip=True) == "小节标题"
     assert "background-color:#F7F6F3" in _styles(content)
+
+
+def test_renderer_renders_plantuml_mermaid_and_formula_blocks_to_images():
+    markdown = r"""
+```plantuml
+Alice -> Bob: Hello
+```
+
+```mermaid
+graph TD
+  A[Start] --> B[Done]
+```
+
+$$
+E = mc^2
+$$
+
+行内公式 \(\alpha + \beta\) 和 $x^2 + y^2$。
+"""
+    html = WeChatMarkdownRenderer("wemd_clean").render(markdown)
+    soup = BeautifulSoup(html, "html.parser")
+
+    plantuml = soup.find("figure", attrs={"data-diagram": "plantuml"})
+    mermaid = soup.find("figure", attrs={"data-diagram": "mermaid"})
+    block_formula = soup.find("section", attrs={"data-formula": "block"})
+    inline_formula = soup.find("span", attrs={"data-formula": "inline"})
+
+    assert plantuml is not None
+    assert mermaid is not None
+    assert block_formula is not None
+    assert inline_formula is not None
+    assert "https://kroki.io/plantuml/svg/" in plantuml.find("img")["src"]
+    assert "https://kroki.io/mermaid/svg/" in mermaid.find("img")["src"]
+    assert "https://latex.codecogs.com/svg.latex?" in block_formula.find("img")["src"]
+    assert "https://latex.codecogs.com/svg.latex?" in inline_formula.find("img")["src"]
+
+
+def test_renderer_rewrites_obsidian_wikilink_image_embeds():
+    markdown = (
+        "封面：![[imgs/cover.png]]\n\n"
+        "手绘：![[diagram.excalidraw|320]]\n\n"
+        "流程：![[flow.drawio|480]]"
+    )
+    html = WeChatMarkdownRenderer("wemd_clean").render(markdown)
+    soup = BeautifulSoup(html, "html.parser")
+    images = soup.find_all("img")
+
+    assert len(images) == 3
+    assert images[0]["src"] == "imgs/cover.png"
+    assert images[1]["src"] == "diagram.excalidraw.svg"
+    assert "width:320px" in images[1].get("style", "")
+    assert images[2]["src"] == "flow.drawio.svg"
+    assert "width:480px" in images[2].get("style", "")
+
+
+def test_wechat_baseline_theme_avoids_card_shell_styles():
+    html = WeChatMarkdownRenderer("wechat_baseline").render("# 标题\n\n正文")
+    soup = BeautifulSoup(html, "html.parser")
+    root = soup.find(id="wemd")
+
+    styles = root.get("style", "")
+    assert "font-size:16px" in styles
+    assert "line-height:1.82" in styles
+    assert "background:transparent" in styles
+    assert "box-shadow" not in styles
+    assert "max-width" not in styles
+    assert "padding:20px" not in styles
+
+
+def test_obsidian_asset_adapter_prefers_same_directory_drawio_exports(tmp_path):
+    article_dir = tmp_path / "post"
+    article_dir.mkdir()
+    (article_dir / "diagram.drawio.svg").write_text("<svg />", encoding="utf-8")
+    (article_dir / "diagram.drawio.png").write_bytes(b"png")
+    (article_dir / "diagram.svg").write_text("<svg />", encoding="utf-8")
+
+    html = ObsidianAssetAdapter().rewrite_image_embeds("![[diagram.drawio|320]]", base_dir=article_dir)
+
+    assert 'src="diagram.drawio.svg"' in html
+    assert 'style="width:320px"' in html
+
+
+def test_obsidian_asset_adapter_uses_drawio_png_when_svg_export_is_missing(tmp_path):
+    article_dir = tmp_path / "post"
+    article_dir.mkdir()
+    (article_dir / "diagram.drawio.png").write_bytes(b"png")
+    (article_dir / "diagram.svg").write_text("<svg />", encoding="utf-8")
+
+    html = ObsidianAssetAdapter().rewrite_image_embeds("![[diagram.drawio]]", base_dir=article_dir)
+
+    assert 'src="diagram.drawio.png"' in html

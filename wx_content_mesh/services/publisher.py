@@ -12,6 +12,7 @@ from ..config import get_settings
 from ..models import Article, ArticleStatus, JobStatus, MediaAsset, PublishChannel, PublishJob, WeChatAccount
 from .html_normalizer import HtmlNormalizer
 from .image_service import ImageService
+from .obsidian_assets import ObsidianAssetAdapter
 from .renderer import WeChatMarkdownRenderer
 from .wechat_client import WeChatApiClient, WeChatError
 
@@ -22,6 +23,7 @@ class PublishService:
         self.settings = get_settings()
         self.image_service = ImageService(session)
         self.html_normalizer = HtmlNormalizer()
+        self.obsidian_assets = ObsidianAssetAdapter()
 
     def create_article(self, **kwargs: Any) -> Article:
         article = Article(**kwargs)
@@ -152,11 +154,12 @@ class PublishService:
         article = self._article(article_id)
         theme_name = theme or article.theme or self.settings.render_theme
         renderer = WeChatMarkdownRenderer(theme_name=theme_name)
-        html = renderer.render(article.markdown, title=article.title)
+        markdown_dir = self._resolve_markdown_dir(article)
+        prepared_markdown = self.obsidian_assets.rewrite_image_embeds(article.markdown, base_dir=markdown_dir)
+        html = renderer.render(prepared_markdown, title=article.title)
         if upload_inline_images:
             account = self._require_account(article)
             client = WeChatApiClient(self.session, account)
-            markdown_dir = self._resolve_markdown_dir(article)
             html = renderer.replace_image_sources(html, lambda src: self._upload_inline(account, client, src, base_dir=markdown_dir))
         out = self.settings.output_dir / f"article_{article.id}" / "wechat_preview.html"
         renderer.save_preview(html, out, page_title=article.title)

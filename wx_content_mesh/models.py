@@ -121,7 +121,7 @@ class Article(Base):
     cover_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_media_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
     content_source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    theme: Mapped[str] = mapped_column(String(80), default="wemd_clean", nullable=False)
+    theme: Mapped[str] = mapped_column(String(80), default="wechat_baseline", nullable=False)
     status: Mapped[ArticleStatus] = mapped_column(Enum(ArticleStatus), default=ArticleStatus.created, nullable=False)
     local_preview_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     wx_draft_media_id: Mapped[str | None] = mapped_column(String(256), nullable=True)

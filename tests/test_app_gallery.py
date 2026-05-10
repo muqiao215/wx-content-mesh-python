@@ -41,5 +41,6 @@ def test_theme_gallery_page_lists_new_themes_and_article_content():
     assert "academic_paper" in response.text
     assert "knowledge_base" in response.text
     assert "morandi_forest" in response.text
+    assert "wechat_baseline" in response.text
     assert "画廊测试" in response.text
-    assert "stylesheet -> inline" in response.text
+    assert "正文" in response.text

@@ -149,6 +149,21 @@
     ],
     "updated_at": "2026-04-28T00:00:00+00:00"
   },
+  "wechat_baseline": {
+    "built_in": true,
+    "created_at": "2026-05-10T00:00:00+00:00",
+    "description": "Baseline WeChat body rhythm theme focused on stable spacing, readable long-form flow, and minimal container decoration.",
+    "display_name": "WeChat Baseline",
+    "preview_cover": null,
+    "source": "wx-content-mesh",
+    "source_url": null,
+    "tags": [
+      "baseline",
+      "wechat",
+      "typography"
+    ],
+    "updated_at": "2026-05-10T00:00:00+00:00"
+  },
   "wemd_clean": {
     "built_in": true,
     "created_at": "2026-04-28T00:00:00+00:00",

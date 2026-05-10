@@ -35,9 +35,13 @@ theme stylesheet
 - `blockquote p a`
 - `--color-primary` 这类 CSS 变量
 - 整份主题 CSS 编译后再 inline
+- `plantuml` 代码块服务端转 SVG
+- `mermaid` 代码块服务端转 SVG
+- 行内/块级公式服务端转 SVG
 
 主题文件在 [wx_content_mesh/themes](C:\Users\11614\Desktop\wx_content_mesh_python\wx_content_mesh_python\wx_content_mesh\themes)：
 
+- `wechat_baseline`
 - `wemd_clean`
 - `wemd_card`
 - `default`
@@ -51,6 +55,9 @@ theme stylesheet
 - `receipt`
 
 其中：
+
+- `wechat_baseline` 是当前默认发布主题，负责稳定的公众号正文基线节奏，不承担预览卡片外壳。
+- `wemd_clean / default / wemd_card` 现在都建立在同一套正文 spacing 基线之上，只保留各自的标题、色彩、块级风格差异。
 
 - `default / grace / simple / modern` 复用了本地 `wechat-format` 内置模板结构，再改成 Python 侧可直接编译的主题 CSS。
 - `academic_paper / bauhaus / knowledge_base / morandi_forest / receipt` 迁自 WeMD 官方模板目录，并适配到当前 `#wemd` + inline 编译链路。
@@ -96,6 +103,17 @@ Article Markdown
   -> poll_publish_status()
       freepublish/get returns status/article_id
       freepublish/getarticle tries to hydrate article URL
+```
+
+图形/公式链路现在是：
+
+```text
+Markdown
+  -> PlantUML/Mermaid/LaTeX 服务端转 SVG URL
+  -> inline HTML
+  -> create_wechat_draft()
+      继续按普通正文图片上传到微信
+  -> 草稿箱里拿到最终效果
 ```
 
 注意：「预览链接」在这里拆成两类：
@@ -251,6 +269,25 @@ python -m wx_content_mesh.cli create-article \
 
 python -m wx_content_mesh.cli render 1
 ```
+
+图形/公式示例：
+
+````markdown
+```plantuml
+Alice -> Bob: Hello
+```
+
+```mermaid
+graph TD
+  A[Start] --> B[Done]
+```
+
+$$
+E = mc^2
+$$
+
+行内公式：\(\alpha + \beta\) 或 $x^2 + y^2$
+````
 
 查看文章、质量检查和发布任务：
 

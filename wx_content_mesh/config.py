@@ -31,8 +31,10 @@ class Settings(BaseSettings):
     allow_wechat_publish: bool = False
     app_base_url: str = "http://127.0.0.1:8000"
     default_author: str = ""
-    render_theme: str = "wemd_clean"
+    render_theme: str = "wechat_baseline"
     publish_policy: Literal["draft_only", "preview_then_submit", "submit_direct"] = "draft_only"
+    kroki_base_url: str = "https://kroki.io"
+    latex_render_base_url: str = "https://latex.codecogs.com/svg.latex"
 
     def ensure_dirs(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)

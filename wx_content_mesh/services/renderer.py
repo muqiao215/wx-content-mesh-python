@@ -13,8 +13,11 @@ from bs4 import BeautifulSoup, Tag
 from cssselect2 import ElementWrapper, Matcher, compile_selector_list
 from lxml import html as lxml_html
 
+from .obsidian_assets import ObsidianAssetAdapter
+from .visual_renderer import WeChatVisualRenderer
+
 _THEME_DIR = Path(__file__).resolve().parent.parent / "themes"
-_DEFAULT_THEME = "wemd_clean"
+_DEFAULT_THEME = "wechat_baseline"
 _EXTERNAL_LINK_RE = re.compile(r"^https?://", re.I)
 _CALLOUT_RE = re.compile(r"^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$", re.I)
 _VAR_RE = re.compile(r"var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)")
@@ -113,6 +116,8 @@ class WeChatMarkdownRenderer:
         self.theme_name = theme_name
         self.external_links_as_footnotes = external_links_as_footnotes
         self.include_toc = include_toc
+        self.visual_renderer = WeChatVisualRenderer()
+        self.obsidian_assets = ObsidianAssetAdapter()
 
     @staticmethod
     def available_themes() -> list[str]:
@@ -120,6 +125,8 @@ class WeChatMarkdownRenderer:
 
     def render(self, markdown_text: str, *, title: str | None = None) -> str:
         prepared = self._preprocess_callouts(markdown_text)
+        prepared = self.obsidian_assets.rewrite_image_embeds(prepared)
+        prepared = self.visual_renderer.transform_markdown(prepared)
         body = md.markdown(
             prepared,
             extensions=["extra", "tables", "fenced_code", "sane_lists", "nl2br", "md_in_html"],
@@ -150,12 +157,18 @@ class WeChatMarkdownRenderer:
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{html.escape(page_title)}</title>
 <style>
-body {{ margin:0; padding:32px 0; background:#f3f4f6; }}
+body {{ margin:0; background:#f3f4f6; }}
+.phone-stage {{ padding:24px 0; }}
 .preview-shell {{ max-width:430px; margin:0 auto; background:#fff; min-height:100vh; box-shadow:0 12px 40px rgba(0,0,0,.12); }}
-@media (max-width: 520px) {{ body {{ padding:0; }} .preview-shell {{ max-width:none; box-shadow:none; }} }}
+.wechat-body {{ padding:20px 16px 28px; }}
+@media (max-width: 520px) {{
+  .phone-stage {{ padding:0; }}
+  .preview-shell {{ max-width:none; box-shadow:none; }}
+  .wechat-body {{ padding:18px 14px 24px; }}
+}}
 </style>
 </head>
-<body><main class="preview-shell">{html_body}</main></body>
+<body><div class="phone-stage"><main class="preview-shell"><article class="wechat-body">{html_body}</article></main></div></body>
 </html>"""
         out_path.write_text(document, encoding="utf-8")
         return out_path

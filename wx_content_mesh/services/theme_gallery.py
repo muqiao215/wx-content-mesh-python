@@ -9,8 +9,12 @@ from ..models import Article
 from .renderer import WeChatMarkdownRenderer
 from .theme_manager import ThemeInfo, ThemeManager
 
-_SAMPLE_TITLE = "wx-content-mesh 主题预览"
-_SAMPLE_MARKDOWN = """## 紧跟标题的段落
+_SAMPLE_TITLE = "wx-content-mesh 版式基线预览"
+_SAMPLE_MARKDOWN = """# 版式基线检查
+
+这里先看标题和首段之间的呼吸感，不看装饰，只看节奏。
+
+## 紧跟标题的段落
 
 这段专门用来观察 `h2 + p` 的处理方式，顺便看看不同主题的首段节奏。
 
@@ -27,6 +31,10 @@ _SAMPLE_MARKDOWN = """## 紧跟标题的段落
 - 第二项里带 `inline code`
 - 第三项带 **重点**
 
+图像嵌入：
+
+![[diagram.excalidraw|320]]
+
 ```python
 def render_theme(name: str) -> str:
     return f"theme={name}"
@@ -37,6 +45,10 @@ def render_theme(name: str) -> str:
 | theme | 当前主题 |
 | source | 文章来源 |
 | mode | 预览模式 |
+
+### 长段落
+
+一篇真正的公众号正文，不需要每一屏都像网页卡片。更重要的是标题层级是否清楚，段落间距是否稳定，图片上下是否有一致留白，引用和代码块是否不会把正文节奏打断。
 """
 
 
@@ -234,6 +246,9 @@ button {{
   min-height: 720px;
   background: #fff;
   box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.06);
+}}
+.shell article {{
+  padding: 20px 16px 28px;
 }}
 @media (max-width: 800px) {{
   .gallery {{ padding-left: 12px; padding-right: 12px; }}

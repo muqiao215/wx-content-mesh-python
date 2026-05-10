@@ -179,7 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--author")
     s.add_argument("--digest")
     s.add_argument("--content-source-url")
-    s.add_argument("--theme", default="wemd_clean")
+    s.add_argument("--theme", default="wechat_baseline")
     s.set_defaults(func=cmd_create_article)
 
     s = sub.add_parser("list-articles")

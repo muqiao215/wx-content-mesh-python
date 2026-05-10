@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from bs4 import BeautifulSoup
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -278,3 +280,171 @@ def test_create_html_draft_uses_prerendered_html_without_markdown_rerender(monke
     assert captured["digest"] == "Already Rendered"
     assert article.meta is not None
     assert article.meta["content_ingress"] == "html"
+
+
+def test_create_wechat_draft_uploads_server_rendered_diagram_and_formula_images(monkeypatch):
+    import wx_content_mesh.services.publisher as publisher_module
+
+    uploaded: list[str] = []
+    captured: dict[str, str] = {}
+    downloaded: list[str] = []
+
+    class FakeDraftClient:
+        def __init__(self, session, account):
+            self.session = session
+            self.account = account
+
+        def upload_inline_image(self, image_path: str):
+            uploaded.append(image_path)
+            return {"url": f"https://mmbiz.qpic.cn/{Path(image_path).name}"}
+
+        def add_draft(self, articles):
+            captured["content"] = articles[0]["content"]
+            return {"media_id": "draft_diagram_formula_1"}
+
+    monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeDraftClient)
+
+    def fake_download(self, url: str):
+        downloaded.append(url)
+        safe_name = url.split("/")[-1].split("?")[0] or "asset"
+        target = self.settings.upload_dir / f"{safe_name}.png"
+        if not target.exists():
+            target.write_bytes(
+                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+                b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\xff\xff?"
+                b"\x00\x05\xfe\x02\xfeA\xde\xfc\xbb\x00\x00\x00\x00IEND\xaeB`\x82"
+            )
+        return target
+
+    monkeypatch.setattr(publisher_module.ImageService, "_download", fake_download)
+
+    db = _session()
+    account = WeChatAccount(
+        name="main",
+        appid="wx_test",
+        raw_secret="secret",
+        default_cover_media_id="cover_media_existing",
+    )
+    db.add(account)
+    db.flush()
+
+    article = Article(
+        account_id=account.id,
+        title="图形与公式",
+        markdown=(
+            "```plantuml\nAlice -> Bob: hi\n```\n\n"
+            "```mermaid\ngraph TD\nA-->B\n```\n\n"
+            "$$\nE = mc^2\n$$\n"
+        ),
+    )
+    db.add(article)
+    db.flush()
+
+    PublishService(db).create_wechat_draft(article.id, upload_inline_images=True)
+
+    assert article.status == ArticleStatus.draft_created
+    assert article.wx_draft_media_id == "draft_diagram_formula_1"
+    assert len(uploaded) >= 1
+    assert len(downloaded) == 3
+    assert any("kroki.io/plantuml/svg/" in url for url in downloaded)
+    assert any("kroki.io/mermaid/svg/" in url for url in downloaded)
+    assert any("latex.codecogs.com/svg.latex?" in url for url in downloaded)
+    soup = BeautifulSoup(captured["content"], "html.parser")
+    rendered_sources = [img.get("src", "") for img in soup.find_all("img")]
+    assert sum(src.startswith("https://mmbiz.qpic.cn/") for src in rendered_sources) >= 3
+
+
+def test_render_article_resolves_obsidian_excalidraw_export_and_uploads_it(monkeypatch, tmp_path: Path):
+    import wx_content_mesh.services.publisher as publisher_module
+
+    uploaded: list[str] = []
+
+    class FakeDraftClient:
+        def __init__(self, session, account):
+            self.session = session
+            self.account = account
+
+        def upload_inline_image(self, image_path: str):
+            uploaded.append(image_path)
+            return {"url": f"https://mmbiz.qpic.cn/{Path(image_path).name}"}
+
+    monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeDraftClient)
+
+    article_dir = tmp_path / "post"
+    article_dir.mkdir()
+    markdown_path = article_dir / "index.md"
+    markdown_path.write_text("图：![[diagram.excalidraw]]", encoding="utf-8")
+    exported = article_dir / "diagram.excalidraw.svg"
+    exported.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#fff"/></svg>',
+        encoding="utf-8",
+    )
+
+    db = _session()
+    account = WeChatAccount(name="main", appid="wx_test", raw_secret="secret", default_cover_media_id="cover_media_existing")
+    db.add(account)
+    db.flush()
+
+    article = Article(
+        account_id=account.id,
+        title="Obsidian 图",
+        markdown=markdown_path.read_text(encoding="utf-8"),
+        meta={"source_path": str(markdown_path)},
+    )
+    db.add(article)
+    db.flush()
+
+    rendered = PublishService(db).render_article(article.id, upload_inline_images=True)
+
+    assert rendered.status == ArticleStatus.rendered
+    assert uploaded
+    assert Path(uploaded[0]).suffix.lower() == ".png"
+    assert "https://mmbiz.qpic.cn/" in rendered.html
+
+
+def test_render_article_resolves_obsidian_drawio_export_and_uploads_it(monkeypatch, tmp_path: Path):
+    import wx_content_mesh.services.publisher as publisher_module
+
+    uploaded: list[str] = []
+
+    class FakeDraftClient:
+        def __init__(self, session, account):
+            self.session = session
+            self.account = account
+
+        def upload_inline_image(self, image_path: str):
+            uploaded.append(image_path)
+            return {"url": f"https://mmbiz.qpic.cn/{Path(image_path).name}"}
+
+    monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeDraftClient)
+
+    article_dir = tmp_path / "post"
+    article_dir.mkdir()
+    markdown_path = article_dir / "index.md"
+    markdown_path.write_text("图：![[diagram.drawio|320]]", encoding="utf-8")
+    exported = article_dir / "diagram.drawio.svg"
+    exported.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#fff"/></svg>',
+        encoding="utf-8",
+    )
+
+    db = _session()
+    account = WeChatAccount(name="main", appid="wx_test", raw_secret="secret", default_cover_media_id="cover_media_existing")
+    db.add(account)
+    db.flush()
+
+    article = Article(
+        account_id=account.id,
+        title="Obsidian drawio 图",
+        markdown=markdown_path.read_text(encoding="utf-8"),
+        meta={"source_path": str(markdown_path)},
+    )
+    db.add(article)
+    db.flush()
+
+    rendered = PublishService(db).render_article(article.id, upload_inline_images=True)
+
+    assert rendered.status == ArticleStatus.rendered
+    assert uploaded
+    assert Path(uploaded[0]).suffix.lower() == ".png"
+    assert "https://mmbiz.qpic.cn/" in rendered.html

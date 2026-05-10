@@ -42,7 +42,7 @@ class ArticleCreate(BaseModel):
     digest: str | None = Field(default=None, max_length=128)
     cover_source: str | None = None
     content_source_url: str | None = None
-    theme: str = "wemd_clean"
+    theme: str = "wechat_baseline"
     meta: dict[str, Any] | None = None
 
 
