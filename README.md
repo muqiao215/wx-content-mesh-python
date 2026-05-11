@@ -85,6 +85,21 @@ wx_content_mesh/
     └── llm.py                     # OpenAI-compatible LLM 客户端
 ```
 
+## Repo-local skills
+
+项目内专属技能现在放在 [`skills/`](skills/README.md)。
+
+当前已内置一组偏科研写作/学术内容加工的 repo-local skills，作为公众号生成工作流的附带能力，而不是继续依赖外部同步 skill 目录：
+
+- `nature-citation`
+- `nature-data`
+- `nature-figure`
+- `nature-paper2ppt`
+- `nature-polishing`
+- `nature-response`
+
+这些 skill 以完整目录形式随仓库管理，保留各自的 `references/`、脚本和示例文件，后续应优先在本仓内维护。
+
 ## 发布链路
 
 ```text
