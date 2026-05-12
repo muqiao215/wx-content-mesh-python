@@ -1,6 +1,11 @@
 README.md
 pyproject.toml
 tests/test_app_gallery.py
+tests/test_cli_html_draft.py
+tests/test_html_draft_api.py
+tests/test_html_draft_file_api.py
+tests/test_html_draft_tool_page.py
+tests/test_html_normalizer.py
 tests/test_image_service.py
 tests/test_publisher.py
 tests/test_renderer.py

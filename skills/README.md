@@ -1,7 +1,7 @@
 # Repo-Local Skills
 
 This directory is the source of truth for workflow-specific skills that belong
-to `wx-content-mesh-python`.
+to `qiao-wechat`.
 
 Current bundled skills:
 

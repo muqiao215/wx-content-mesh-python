@@ -36,7 +36,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="wx-content-mesh", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="qiao wechat", version="0.3.0", lifespan=lifespan)
 
 
 def get_db():
@@ -63,7 +63,7 @@ def html_draft_tool() -> HTMLResponse:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>wx-content-mesh HTML Draft Tool</title>
+  <title>qiao wechat HTML Draft Tool</title>
   <style>
     :root {
       color-scheme: light;

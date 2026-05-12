@@ -1,4 +1,6 @@
-# wx-content-mesh-python
+# qiao wechat
+
+`qiao wechat` 是这套公众号内容链路的公开版名称。
 
 Python-only 架构源码：把 wxAiPost 适合借鉴的「后台/发布链路」拆出来，再补一个 WeMD-like 的微信排版层。
 
