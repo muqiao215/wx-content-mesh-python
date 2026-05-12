@@ -164,6 +164,21 @@
     ],
     "updated_at": "2026-05-10T00:00:00+00:00"
   },
+  "wechat_standard_v2": {
+    "built_in": true,
+    "created_at": "2026-05-12T00:00:00+00:00",
+    "description": "Standard WeChat article theme v2 with refined body rhythm, clean structural headings, and no outer card shell.",
+    "display_name": "WeChat Standard v2",
+    "preview_cover": null,
+    "source": "wx-content-mesh",
+    "source_url": null,
+    "tags": [
+      "standard",
+      "wechat",
+      "typography"
+    ],
+    "updated_at": "2026-05-12T00:00:00+00:00"
+  },
   "wemd_clean": {
     "built_in": true,
     "created_at": "2026-04-28T00:00:00+00:00",

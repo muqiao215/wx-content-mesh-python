@@ -8,7 +8,7 @@ import zlib
 from ..config import get_settings
 
 _PLANTUML_BLOCK_RE = re.compile(r"^```plantuml\r?\n([\s\S]*?)\r?\n```[ \t]*$", re.M)
-_MERMAID_BLOCK_RE = re.compile(r"^```mermaid\r?\n([\s\S]*?)\r?\n```[ \t]*$", re.M)
+_GRAPHVIZ_BLOCK_RE = re.compile(r"^```(?:graphviz|dot)\r?\n([\s\S]*?)\r?\n```[ \t]*$", re.M)
 _BLOCK_DOLLAR_RE = re.compile(r"^\s*\$\$\s*\r?\n([\s\S]*?)\r?\n\$\$\s*$", re.M)
 _BLOCK_LATEX_RE = re.compile(r"\\\[\s*([\s\S]*?)\s*\\\]", re.M)
 _INLINE_LATEX_RE = re.compile(r"\\\(([^\\]*(?:\\.[^\\]*)*?)\\\)")
@@ -21,7 +21,7 @@ class WeChatVisualRenderer:
 
     def transform_markdown(self, markdown_text: str) -> str:
         transformed = _PLANTUML_BLOCK_RE.sub(lambda match: self._render_diagram_block("plantuml", match.group(1)), markdown_text)
-        transformed = _MERMAID_BLOCK_RE.sub(lambda match: self._render_diagram_block("mermaid", match.group(1)), transformed)
+        transformed = _GRAPHVIZ_BLOCK_RE.sub(lambda match: self._render_diagram_block("graphviz", match.group(1)), transformed)
         transformed = _BLOCK_DOLLAR_RE.sub(lambda match: self._render_formula_block(match.group(1)), transformed)
         transformed = _BLOCK_LATEX_RE.sub(lambda match: self._render_formula_block(match.group(1)), transformed)
         transformed = _INLINE_LATEX_RE.sub(lambda match: self._render_formula_inline(match.group(1)), transformed)
@@ -40,7 +40,11 @@ class WeChatVisualRenderer:
 
     def _render_diagram_block(self, diagram_type: str, code: str) -> str:
         src = self.kroki_url(diagram_type, code)
-        label = "PlantUML" if diagram_type == "plantuml" else "Mermaid"
+        label_map = {
+            "plantuml": "PlantUML",
+            "graphviz": "Graphviz",
+        }
+        label = label_map.get(diagram_type, diagram_type.title())
         return (
             f'<figure data-diagram="{diagram_type}" style="margin:16px 0;text-align:center;">'
             f'<img src="{src}" alt="{label} diagram" '

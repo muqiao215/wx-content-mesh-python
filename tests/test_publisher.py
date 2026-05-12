@@ -8,6 +8,9 @@ from sqlalchemy.orm import sessionmaker
 from wx_content_mesh.db import Base
 from wx_content_mesh.models import Article, ArticleStatus, WeChatAccount
 from wx_content_mesh.services.publisher import PublishService
+from wx_content_mesh.services.quality_gate import QualityGate
+from wx_content_mesh.services.wechat_repo_flow import WechatRepoFlowService
+from wx_content_mesh.config import Settings
 
 
 def _session():
@@ -208,6 +211,91 @@ def test_create_wechat_draft_compacts_oversized_html_before_validation(monkeypat
     assert article.meta["wechat_draft_compaction"]["applied"] is True
 
 
+def test_quality_gate_flags_wechat_review_risky_phrases():
+    issues = QualityGate().inspect("Claude Agent 协议，为什么它最稳", "这是业界通用最优解，也是更权威的方案。")
+
+    messages = [issue.message for issue in issues]
+    assert any("微信内容审核风险表达：最稳" in message for message in messages)
+    assert any("微信内容审核风险表达：业界通用最优解" in message for message in messages)
+    assert any("微信内容审核风险表达：权威" in message for message in messages)
+
+
+def test_quality_gate_flags_unrendered_obsidian_and_diagram_sources():
+    issues = QualityGate().inspect(
+        "图形稿件",
+        "这里有 ![[diagram.drawio]]\n\n```graphviz\ndigraph G { A -> B; }\n```",
+    )
+
+    messages = [issue.message for issue in issues]
+    assert any("最终内容里残留了 Obsidian 内嵌资源语法" in message for message in messages)
+    assert any("最终内容里残留了图形源码块" in message for message in messages)
+
+
+def test_create_wechat_draft_blocks_rendered_obsidian_artifacts(monkeypatch):
+    import wx_content_mesh.services.publisher as publisher_module
+
+    class FakeDraftClient:
+        def __init__(self, session, account):
+            self.session = session
+            self.account = account
+
+        def add_draft(self, articles):
+            return {"media_id": "draft_should_not_happen"}
+
+    monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeDraftClient)
+
+    db = _session()
+    account = WeChatAccount(
+        name="main",
+        appid="wx_test",
+        raw_secret="secret",
+        default_cover_media_id="cover_media_existing",
+    )
+    db.add(account)
+    db.flush()
+
+    article = Article(
+        account_id=account.id,
+        title="残留源码",
+        markdown="正文",
+        html="<section id='wemd'><p>![[diagram.drawio]]</p></section>",
+    )
+    db.add(article)
+    db.flush()
+
+    try:
+        PublishService(db).create_wechat_draft(article.id, upload_inline_images=False)
+    except ValueError as exc:
+        assert "publish blocked by rendered artifact gate" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("rendered artifact gate should block leaked obsidian syntax")
+
+
+def test_publish_pending_to_draftbox_blocks_medium_risk_copy(tmp_path: Path):
+    db = _session()
+    settings = Settings(
+        wechat_pending_dir=tmp_path / "pending",
+        wechat_draft_dir=tmp_path / "draft",
+        wechat_published_backup_dir=tmp_path / "published",
+    )
+    settings.ensure_dirs()
+    settings.wechat_pending_dir.mkdir(parents=True, exist_ok=True)
+    pending = settings.wechat_pending_dir / "Claude Agent 协议，为什么它最稳.md"
+    pending.write_text("# Claude Agent 协议，为什么它最稳\n\n这是业界通用最优解。", encoding="utf-8")
+
+    try:
+        WechatRepoFlowService(settings, db).publish_pending_to_draftbox(
+            markdown_path=str(pending),
+            account_id=1,
+            theme="wechat_baseline",
+        )
+    except ValueError as exc:
+        assert "publish blocked by quality gate" in str(exc)
+        assert "微信内容审核风险表达" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("publish should be blocked by quality gate")
+
+
 def test_create_html_draft_uses_prerendered_html_without_markdown_rerender(monkeypatch, tmp_path: Path):
     import wx_content_mesh.services.publisher as publisher_module
 
@@ -345,13 +433,14 @@ def test_create_wechat_draft_uploads_server_rendered_diagram_and_formula_images(
     assert article.status == ArticleStatus.draft_created
     assert article.wx_draft_media_id == "draft_diagram_formula_1"
     assert len(uploaded) >= 1
-    assert len(downloaded) == 3
+    assert len(downloaded) == 2
     assert any("kroki.io/plantuml/svg/" in url for url in downloaded)
-    assert any("kroki.io/mermaid/svg/" in url for url in downloaded)
+    assert not any("kroki.io/mermaid/svg/" in url for url in downloaded)
     assert any("latex.codecogs.com/svg.latex?" in url for url in downloaded)
     soup = BeautifulSoup(captured["content"], "html.parser")
     rendered_sources = [img.get("src", "") for img in soup.find_all("img")]
-    assert sum(src.startswith("https://mmbiz.qpic.cn/") for src in rendered_sources) >= 3
+    assert sum(src.startswith("https://mmbiz.qpic.cn/") for src in rendered_sources) >= 2
+    assert "graph TD" in captured["content"]
 
 
 def test_render_article_resolves_obsidian_excalidraw_export_and_uploads_it(monkeypatch, tmp_path: Path):

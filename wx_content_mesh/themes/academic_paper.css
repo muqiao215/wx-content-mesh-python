@@ -1,10 +1,9 @@
 #wemd {
-    padding: 30px 20px;
-    max-width: 677px;
-    margin: 0 auto;
     /* 混合字体栈：西文Times + 中文宋体 */
     font-family: "Times New Roman", "Songti SC", "SimSun", serif;
     color: #000;
+    font-size: 16px;
+    line-height: 1.7;
     background-color: transparent;
     /* 透明背景，兼容微信深色模式 */
     word-break: break-word;

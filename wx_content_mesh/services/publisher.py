@@ -13,6 +13,7 @@ from ..models import Article, ArticleStatus, JobStatus, MediaAsset, PublishChann
 from .html_normalizer import HtmlNormalizer
 from .image_service import ImageService
 from .obsidian_assets import ObsidianAssetAdapter
+from .quality_gate import QualityGate
 from .renderer import WeChatMarkdownRenderer
 from .wechat_client import WeChatApiClient, WeChatError
 
@@ -24,6 +25,7 @@ class PublishService:
         self.image_service = ImageService(session)
         self.html_normalizer = HtmlNormalizer()
         self.obsidian_assets = ObsidianAssetAdapter()
+        self.quality_gate = QualityGate()
 
     def create_article(self, **kwargs: Any) -> Article:
         article = Article(**kwargs)
@@ -192,6 +194,7 @@ class PublishService:
             "need_open_comment": 0,
             "only_fans_can_comment": 0,
         }
+        self._validate_rendered_publish_artifacts(article.title, wx_article["content"])
         self._validate_draft_content(wx_article["content"])
         job = self._job(article, PublishChannel.wx_draft, JobStatus.running, request={"articles": [{**wx_article, "content": "<omitted>"}]})
         try:
@@ -411,6 +414,14 @@ class PublishService:
 
         self._validate_draft_content(optimized)
         return optimized
+
+    def _validate_rendered_publish_artifacts(self, title: str, content: str) -> None:
+        issues = self.quality_gate.inspect(title, content)
+        blocking = [issue for issue in issues if "残留了" in issue.message and issue.level in {"medium", "high"}]
+        if not blocking:
+            return
+        summary = "；".join(f"{issue.message} -> {issue.suggestion}" for issue in blocking)
+        raise ValueError(f"publish blocked by rendered artifact gate: {summary}")
 
     @staticmethod
     def _compact_wechat_html(content: str) -> str:

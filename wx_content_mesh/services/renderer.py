@@ -19,8 +19,43 @@ from .visual_renderer import WeChatVisualRenderer
 _THEME_DIR = Path(__file__).resolve().parent.parent / "themes"
 _DEFAULT_THEME = "wechat_baseline"
 _EXTERNAL_LINK_RE = re.compile(r"^https?://", re.I)
-_CALLOUT_RE = re.compile(r"^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$", re.I)
+_CALLOUT_RE = re.compile(r"^>\s*\[!([A-Z][A-Z0-9_-]*)\]\s*(.*)$", re.I)
+_FRONTMATTER_RE = re.compile(r"(?s)\A---\s*\n.*?\n(?:---|\.\.\.)\s*(?:\n|$)")
+_CALLOUT_TITLES = {
+    "note": "说明",
+    "tip": "提示",
+    "important": "重点",
+    "warning": "注意",
+    "caution": "提醒",
+    "summary": "摘要",
+}
 _VAR_RE = re.compile(r"var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)")
+_INHERITABLE_PROPERTIES = {
+    "color",
+    "font",
+    "font-family",
+    "font-size",
+    "font-style",
+    "font-variant",
+    "font-weight",
+    "letter-spacing",
+    "line-height",
+    "text-align",
+    "text-indent",
+    "text-transform",
+    "visibility",
+    "white-space",
+    "word-break",
+    "word-spacing",
+    "overflow-wrap",
+    "list-style",
+    "list-style-type",
+    "list-style-position",
+    "cursor",
+}
+_DROPPED_INLINE_PROPERTIES = {
+    "box-sizing",
+}
 
 
 @dataclass(frozen=True)
@@ -124,7 +159,8 @@ class WeChatMarkdownRenderer:
         return sorted(_theme_paths())
 
     def render(self, markdown_text: str, *, title: str | None = None) -> str:
-        prepared = self._preprocess_callouts(markdown_text)
+        prepared = self._strip_frontmatter(markdown_text)
+        prepared = self._preprocess_callouts(prepared)
         prepared = self.obsidian_assets.rewrite_image_embeds(prepared)
         prepared = self.visual_renderer.transform_markdown(prepared)
         body = md.markdown(
@@ -183,6 +219,9 @@ body {{ margin:0; background:#f3f4f6; }}
             img["src"] = uploader(src)
         return str(soup)
 
+    def _strip_frontmatter(self, text: str) -> str:
+        return _FRONTMATTER_RE.sub("", text, count=1)
+
     def _preprocess_callouts(self, text: str) -> str:
         lines = text.splitlines()
         out: list[str] = []
@@ -194,7 +233,7 @@ body {{ margin:0; background:#f3f4f6; }}
                 i += 1
                 continue
             kind = match.group(1).lower()
-            title = match.group(2).strip() or kind.upper()
+            title = match.group(2).strip() or _CALLOUT_TITLES.get(kind, kind.upper())
             content: list[str] = []
             i += 1
             while i < len(lines) and lines[i].startswith(">"):
@@ -327,13 +366,16 @@ body {{ margin:0; background:#f3f4f6; }}
         matcher = _theme_matcher(self.theme_name)
         wrapper_root = ElementWrapper.from_html_root(element)
         resolved_vars: dict[object, dict[str, str]] = {}
+        resolved_styles: dict[object, dict[str, str]] = {}
 
         for wrapped in wrapper_root.iter_subtree():
             etree_element = wrapped.etree_element
+            parent_element = wrapped.parent.etree_element if wrapped.parent is not None else None
             parent_vars = resolved_vars.get(
-                wrapped.parent.etree_element if wrapped.parent is not None else None,
+                parent_element,
                 {},
             )
+            parent_styles = resolved_styles.get(parent_element, {})
             selected = self._select_declarations(wrapped, matcher)
 
             scoped_vars = dict(parent_vars)
@@ -348,13 +390,22 @@ body {{ margin:0; background:#f3f4f6; }}
             for name, value in selected.items():
                 if name.startswith("--"):
                     continue
-                rendered.append((name, self._resolve_value(value, computed_vars)))
+                if name in _DROPPED_INLINE_PROPERTIES:
+                    continue
+                resolved = self._resolve_value(value, computed_vars)
+                if name in _INHERITABLE_PROPERTIES and parent_styles.get(name) == resolved:
+                    continue
+                rendered.append((name, resolved))
 
             if rendered:
                 etree_element.set("style", self._serialize_style(rendered))
             else:
                 etree_element.attrib.pop("style", None)
             resolved_vars[etree_element] = computed_vars
+            resolved_styles[etree_element] = {
+                **parent_styles,
+                **{name: value for name, value in rendered},
+            }
 
         return lxml_html.tostring(element, encoding="unicode", method="html")
 

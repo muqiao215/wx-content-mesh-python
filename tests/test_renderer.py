@@ -15,6 +15,34 @@ def test_renderer_outputs_inline_style():
     assert "重点" in html
 
 
+def test_renderer_strips_frontmatter_and_supports_summary_callout():
+    markdown = """---
+title: "示例标题"
+tags:
+  - 示例
+created: 2026-05-12
+---
+
+> [!summary] 一句话总结
+> 第一行
+> 第二行
+"""
+    html = WeChatMarkdownRenderer("wechat_baseline").render(markdown, title="示例标题")
+
+    assert "title:" not in html
+    assert "created:" not in html
+    assert "[!summary]" not in html
+    assert 'data-callout="summary"' in html
+    assert "一句话总结" in html
+
+
+def test_renderer_uses_localized_default_summary_callout_title():
+    html = WeChatMarkdownRenderer("wechat_baseline").render("> [!summary]\n> 第一行")
+
+    assert 'data-callout="summary"' in html
+    assert "摘要" in html
+
+
 def test_renderer_uses_title_when_markdown_has_no_h1():
     html = WeChatMarkdownRenderer("wemd_clean").render("正文", title="外部标题")
     assert "<h1" in html
@@ -71,23 +99,26 @@ def test_renderer_resolves_css_variables_and_root_id_theme():
     assert "background:transparent" in _styles(root)
     assert "font-family:\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", serif" in _styles(root)
     assert "line-height:1.86" in _styles(root)
+    assert "color:#2d2a26" in _styles(root)
     assert "border:1px solid #ddd2c5" not in _styles(root)
     assert "var(" not in _styles(root)
-    assert "color:#2d2a26" in _styles(paragraph)
+    assert "color:#2d2a26" not in _styles(paragraph)
 
 
 def test_refactored_themes_share_body_first_root_without_card_shell():
-    for theme_name in ("wechat_baseline", "wemd_clean", "default", "wemd_card"):
+    for theme_name in WeChatMarkdownRenderer.available_themes():
         html = WeChatMarkdownRenderer(theme_name).render("# 标题\n\n正文")
         soup = BeautifulSoup(html, "html.parser")
         root = soup.find(id="wemd")
         styles = root.get("style", "")
 
-        assert "font-size:16px" in styles
-        assert "background:transparent" in styles
+        assert "font-size:" in styles
+        assert "background:transparent" in styles or "background-color:transparent" in styles
         assert "max-width" not in styles
         assert "margin:0 auto" not in styles
         assert "box-shadow" not in styles
+        assert "padding:" not in styles
+        assert "border-radius" not in styles
 
 
 def test_renderer_lists_builtin_themes():
@@ -103,6 +134,7 @@ def test_renderer_lists_builtin_themes():
         "receipt",
         "simple",
         "wechat_baseline",
+        "wechat_standard_v2",
         "wemd_card",
         "wemd_clean",
     }.issubset(set(themes))
@@ -119,15 +151,16 @@ def test_renderer_wraps_heading_content_for_wemd_templates():
     assert "background-color:#F7F6F3" in _styles(content)
 
 
-def test_renderer_renders_plantuml_mermaid_and_formula_blocks_to_images():
+def test_renderer_renders_plantuml_graphviz_and_formula_blocks_to_images():
     markdown = r"""
 ```plantuml
 Alice -> Bob: Hello
 ```
 
-```mermaid
-graph TD
-  A[Start] --> B[Done]
+```graphviz
+digraph G {
+  A -> B;
+}
 ```
 
 $$
@@ -140,16 +173,16 @@ $$
     soup = BeautifulSoup(html, "html.parser")
 
     plantuml = soup.find("figure", attrs={"data-diagram": "plantuml"})
-    mermaid = soup.find("figure", attrs={"data-diagram": "mermaid"})
+    graphviz = soup.find("figure", attrs={"data-diagram": "graphviz"})
     block_formula = soup.find("section", attrs={"data-formula": "block"})
     inline_formula = soup.find("span", attrs={"data-formula": "inline"})
 
     assert plantuml is not None
-    assert mermaid is not None
+    assert graphviz is not None
     assert block_formula is not None
     assert inline_formula is not None
     assert "https://kroki.io/plantuml/svg/" in plantuml.find("img")["src"]
-    assert "https://kroki.io/mermaid/svg/" in mermaid.find("img")["src"]
+    assert "https://kroki.io/graphviz/svg/" in graphviz.find("img")["src"]
     assert "https://latex.codecogs.com/svg.latex?" in block_formula.find("img")["src"]
     assert "https://latex.codecogs.com/svg.latex?" in inline_formula.find("img")["src"]
 

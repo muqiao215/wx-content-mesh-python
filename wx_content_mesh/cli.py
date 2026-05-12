@@ -7,7 +7,9 @@ from .db import db_session, init_db
 from .models import Article, PublishJob, WeChatAccount
 from .services.publisher import PublishService
 from .services.quality_gate import QualityGate
+from .services.wechat_repo_flow import WechatRepoFlowService
 from .services.xhs_exporter import XhsExporter
+from .config import get_settings
 
 
 def cmd_init(_: argparse.Namespace) -> None:
@@ -153,6 +155,56 @@ def cmd_xhs(args: argparse.Namespace) -> None:
         print(path)
 
 
+def cmd_list_drafts(_: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        service = WechatRepoFlowService(get_settings(), db)
+        items = service.list_drafts()
+        for item in items:
+            print(f"{item.title}\t{item.chars}\t{item.path}")
+
+
+def cmd_list_pending(_: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        service = WechatRepoFlowService(get_settings(), db)
+        items = service.list_pending()
+        for item in items:
+            print(f"{item.title}\t{item.chars}\t{item.path}")
+
+
+def cmd_move_draft_to_pending(args: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        service = WechatRepoFlowService(get_settings(), db)
+        target = service.move_draft_to_pending(args.markdown, copy_only=args.copy_only)
+        print(target)
+
+
+def cmd_publish_pending_draftbox(args: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        service = WechatRepoFlowService(get_settings(), db)
+        article_id, media_id = service.publish_pending_to_draftbox(
+            markdown_path=args.markdown,
+            account_id=args.account_id,
+            author=args.author,
+            digest=args.digest,
+            cover=args.cover,
+            theme=args.theme,
+        )
+        print(f"article_id={article_id}")
+        print(f"draft media_id={media_id}")
+
+
+def cmd_archive_pending_after_publish(args: argparse.Namespace) -> None:
+    init_db()
+    with db_session() as db:
+        service = WechatRepoFlowService(get_settings(), db)
+        target = service.archive_pending_after_publish(args.markdown)
+        print(target)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="wx-content-mesh")
     sub = p.add_subparsers(required=True)
@@ -239,6 +291,30 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("article_id", type=int)
     s.add_argument("--tags", nargs="*", default=[])
     s.set_defaults(func=cmd_xhs)
+
+    s = sub.add_parser("list-drafts")
+    s.set_defaults(func=cmd_list_drafts)
+
+    s = sub.add_parser("list-pending")
+    s.set_defaults(func=cmd_list_pending)
+
+    s = sub.add_parser("move-draft-to-pending")
+    s.add_argument("--markdown", required=True)
+    s.add_argument("--copy-only", action="store_true")
+    s.set_defaults(func=cmd_move_draft_to_pending)
+
+    s = sub.add_parser("publish-pending-draftbox")
+    s.add_argument("--markdown", required=True)
+    s.add_argument("--account-id", type=int, required=True)
+    s.add_argument("--author")
+    s.add_argument("--digest")
+    s.add_argument("--cover")
+    s.add_argument("--theme", default="wechat_baseline")
+    s.set_defaults(func=cmd_publish_pending_draftbox)
+
+    s = sub.add_parser("archive-pending-after-publish")
+    s.add_argument("--markdown", required=True)
+    s.set_defaults(func=cmd_archive_pending_after_publish)
 
     return p
 

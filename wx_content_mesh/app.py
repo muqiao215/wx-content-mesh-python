@@ -36,7 +36,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="wx-content-mesh", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="wx-content-mesh", version="0.3.0", lifespan=lifespan)
 
 
 def get_db():

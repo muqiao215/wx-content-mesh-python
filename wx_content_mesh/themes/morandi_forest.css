@@ -1,9 +1,8 @@
 #wemd {
-  padding: 30px 22px;
-  max-width: 677px;
-  margin: 0 auto;
   font-family: "Optima", "Georgia", "PingFang SC", "Microsoft YaHei", serif;
   color: #2F3E32;
+  font-size: 16px;
+  line-height: 2;
   background-color: transparent;
   /* 透明背景，兼容微信深色模式 */
   word-break: break-word;

@@ -21,9 +21,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/wx_content_mesh.db"
     output_dir: Path = Path("./outputs")
     upload_dir: Path = Path("./uploads")
-    source_repo_dir: Path = Path("/root/workspace/xueyu-gongzhonghao")
+    source_repo_dir: Path = Path("/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive")
     article_outbox_dir: Path = Path("/srv/self-media-exchange/outbox/wechat-article-files")
     video_outbox_dir: Path = Path("/srv/self-media-exchange/outbox/wechat-video-delivery")
+    wechat_draft_dir: Path = Path("/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive/公众号/草稿")
+    wechat_pending_dir: Path = Path("/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive/公众号/待发布")
+    wechat_published_backup_dir: Path = Path("/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive/公众号/旧发布备份")
     request_timeout: float = 20.0
     token_margin_seconds: int = 300
     use_stable_token: bool = True

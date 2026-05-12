@@ -1,6 +1,6 @@
 [project]
 name = "wx-content-mesh"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python-only WeChat/XHS content workflow: WeMD-like rendering + wxAiPost-like backend + publishing records"
 requires-python = ">=3.11"
 dependencies = [
