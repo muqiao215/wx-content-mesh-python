@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from wx_content_mesh.app import app
+from qiao_wechat.app import app
 
 
 def test_html_draft_tool_page_renders_form():

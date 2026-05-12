@@ -140,7 +140,7 @@
     "description": "Card-like WeMD-inspired article theme with white content blocks and soft shadows.",
     "display_name": "WeMD Card",
     "preview_cover": null,
-    "source": "wx-content-mesh",
+    "source": "qiao-wechat",
     "source_url": null,
     "tags": [
       "card",
@@ -155,7 +155,7 @@
     "description": "Baseline WeChat body rhythm theme focused on stable spacing, readable long-form flow, and minimal container decoration.",
     "display_name": "WeChat Baseline",
     "preview_cover": null,
-    "source": "wx-content-mesh",
+    "source": "qiao-wechat",
     "source_url": null,
     "tags": [
       "baseline",
@@ -170,7 +170,7 @@
     "description": "Standard WeChat article theme v2 with refined body rhythm, clean structural headings, and no outer card shell.",
     "display_name": "WeChat Standard v2",
     "preview_cover": null,
-    "source": "wx-content-mesh",
+    "source": "qiao-wechat",
     "source_url": null,
     "tags": [
       "standard",
@@ -185,7 +185,7 @@
     "description": "Clean WeMD-inspired baseline theme for stable WeChat inline HTML rendering.",
     "display_name": "WeMD Clean",
     "preview_cover": null,
-    "source": "wx-content-mesh",
+    "source": "qiao-wechat",
     "source_url": null,
     "tags": [
       "clean",

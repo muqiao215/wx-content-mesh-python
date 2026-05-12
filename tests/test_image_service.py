@@ -4,8 +4,8 @@ from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from wx_content_mesh.db import Base
-from wx_content_mesh.services.image_service import ImageService
+from qiao_wechat.db import Base
+from qiao_wechat.services.image_service import ImageService
 
 
 def _session():

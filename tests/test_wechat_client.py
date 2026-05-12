@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from wx_content_mesh.config import get_plain_env
-from wx_content_mesh.models import WeChatAccount
-from wx_content_mesh.services.wechat_client import WeChatApiClient
+from qiao_wechat.config import get_plain_env
+from qiao_wechat.models import WeChatAccount
+from qiao_wechat.services.wechat_client import WeChatApiClient
 
 
 def test_validate_inline_image_rejects_gif(tmp_path: Path):

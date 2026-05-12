@@ -3,9 +3,9 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from wx_content_mesh.db import db_session, init_db
-from wx_content_mesh.services.publisher import PublishService
-from wx_content_mesh.services.xhs_exporter import XhsExporter
+from qiao_wechat.db import db_session, init_db
+from qiao_wechat.services.publisher import PublishService
+from qiao_wechat.services.xhs_exporter import XhsExporter
 
 init_db()
 md = Path(__file__).with_name("sample_article.md").read_text(encoding="utf-8")

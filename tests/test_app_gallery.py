@@ -2,9 +2,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from wx_content_mesh.app import app, get_db
-from wx_content_mesh.db import Base
-from wx_content_mesh.models import Article, WeChatAccount
+from qiao_wechat.app import app, get_db
+from qiao_wechat.db import Base
+from qiao_wechat.models import Article, WeChatAccount
 
 
 def _session():

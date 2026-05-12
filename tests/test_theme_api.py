@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-import wx_content_mesh.app as app_module
-from wx_content_mesh.services.theme_manager import ThemeManager
+import qiao_wechat.app as app_module
+from qiao_wechat.services.theme_manager import ThemeManager
 
 
 SAMPLE_CSS = """

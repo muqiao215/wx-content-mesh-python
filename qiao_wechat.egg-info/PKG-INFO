@@ -1,5 +1,5 @@
 Metadata-Version: 2.4
-Name: wx-content-mesh
+Name: qiao-wechat
 Version: 0.3.0
 Summary: Python-only WeChat/XHS content workflow: WeMD-like rendering + wxAiPost-like backend + publishing records
 Requires-Python: >=3.11

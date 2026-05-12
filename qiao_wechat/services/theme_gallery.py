@@ -9,7 +9,7 @@ from ..models import Article
 from .renderer import WeChatMarkdownRenderer
 from .theme_manager import ThemeInfo, ThemeManager
 
-_SAMPLE_TITLE = "wx-content-mesh 版式基线预览"
+_SAMPLE_TITLE = "qiao-wechat 版式基线预览"
 _SAMPLE_MARKDOWN = """# 版式基线检查
 
 这里先看标题和首段之间的呼吸感，不看装饰，只看节奏。

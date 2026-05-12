@@ -1,5 +1,5 @@
 [project]
-name = "wx-content-mesh"
+name = "qiao-wechat"
 version = "0.3.0"
 description = "Python-only WeChat/XHS content workflow: WeMD-like rendering + wxAiPost-like backend + publishing records"
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wx-content-mesh = "wx_content_mesh.cli:main"
+qiao-wechat = "qiao_wechat.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -36,4 +36,4 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["wx_content_mesh"]
+packages = ["qiao_wechat"]

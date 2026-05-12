@@ -1,0 +1,2 @@
+[console_scripts]
+qiao-wechat = qiao_wechat.cli:main

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from wx_content_mesh.cli import build_parser
+from qiao_wechat.cli import build_parser
 
 
 def test_html_draft_parser_accepts_html_file_args(tmp_path: Path):

@@ -206,7 +206,7 @@ def cmd_archive_pending_after_publish(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="wx-content-mesh")
+    p = argparse.ArgumentParser(prog="qiao-wechat")
     sub = p.add_subparsers(required=True)
 
     s = sub.add_parser("init")

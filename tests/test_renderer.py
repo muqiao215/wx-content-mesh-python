@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
-from wx_content_mesh.services.obsidian_assets import ObsidianAssetAdapter
-from wx_content_mesh.services.renderer import WeChatMarkdownRenderer
+from qiao_wechat.services.obsidian_assets import ObsidianAssetAdapter
+from qiao_wechat.services.renderer import WeChatMarkdownRenderer
 
 
 def _styles(tag) -> str:

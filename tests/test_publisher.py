@@ -5,12 +5,12 @@ from bs4 import BeautifulSoup
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from wx_content_mesh.db import Base
-from wx_content_mesh.models import Article, ArticleStatus, WeChatAccount
-from wx_content_mesh.services.publisher import PublishService
-from wx_content_mesh.services.quality_gate import QualityGate
-from wx_content_mesh.services.wechat_repo_flow import WechatRepoFlowService
-from wx_content_mesh.config import Settings
+from qiao_wechat.db import Base
+from qiao_wechat.models import Article, ArticleStatus, WeChatAccount
+from qiao_wechat.services.publisher import PublishService
+from qiao_wechat.services.quality_gate import QualityGate
+from qiao_wechat.services.wechat_repo_flow import WechatRepoFlowService
+from qiao_wechat.config import Settings
 
 
 def _session():
@@ -36,7 +36,7 @@ class FakeWeChatClient:
 
 
 def test_poll_publish_status_hydrates_article_url(monkeypatch):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     monkeypatch.setattr(publisher_module, "WeChatApiClient", FakeWeChatClient)
     db = _session()
@@ -108,7 +108,7 @@ def test_publish_is_blocked_by_default():
 
 
 def test_create_wechat_draft_normalizes_svg_cover_and_inline_images(monkeypatch, tmp_path: Path):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     uploaded: dict[str, list[str]] = {"inline": [], "cover": []}
 
@@ -164,7 +164,7 @@ def test_create_wechat_draft_normalizes_svg_cover_and_inline_images(monkeypatch,
 
 
 def test_create_wechat_draft_compacts_oversized_html_before_validation(monkeypatch):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     captured: dict[str, str] = {}
 
@@ -232,7 +232,7 @@ def test_quality_gate_flags_unrendered_obsidian_and_diagram_sources():
 
 
 def test_create_wechat_draft_blocks_rendered_obsidian_artifacts(monkeypatch):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     class FakeDraftClient:
         def __init__(self, session, account):
@@ -297,7 +297,7 @@ def test_publish_pending_to_draftbox_blocks_medium_risk_copy(tmp_path: Path):
 
 
 def test_create_html_draft_uses_prerendered_html_without_markdown_rerender(monkeypatch, tmp_path: Path):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     uploaded: dict[str, list[str]] = {"inline": [], "cover": []}
     captured: dict[str, str] = {}
@@ -371,7 +371,7 @@ def test_create_html_draft_uses_prerendered_html_without_markdown_rerender(monke
 
 
 def test_create_wechat_draft_uploads_server_rendered_diagram_and_formula_images(monkeypatch):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     uploaded: list[str] = []
     captured: dict[str, str] = {}
@@ -444,7 +444,7 @@ def test_create_wechat_draft_uploads_server_rendered_diagram_and_formula_images(
 
 
 def test_render_article_resolves_obsidian_excalidraw_export_and_uploads_it(monkeypatch, tmp_path: Path):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     uploaded: list[str] = []
 
@@ -492,7 +492,7 @@ def test_render_article_resolves_obsidian_excalidraw_export_and_uploads_it(monke
 
 
 def test_render_article_resolves_obsidian_drawio_export_and_uploads_it(monkeypatch, tmp_path: Path):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     uploaded: list[str] = []
 

@@ -124,7 +124,7 @@ class ImageService:
         target = self.settings.upload_dir / name
         if target.exists() and target.stat().st_size > 0:
             return target
-        resp = requests.get(url, timeout=self.settings.request_timeout, headers={"User-Agent": "wx-content-mesh/0.2"})
+        resp = requests.get(url, timeout=self.settings.request_timeout, headers={"User-Agent": "qiao-wechat/0.2"})
         resp.raise_for_status()
         if len(resp.content) > 20 * 1024 * 1024:
             raise ValueError("image too large; refusing to store files over 20MB")

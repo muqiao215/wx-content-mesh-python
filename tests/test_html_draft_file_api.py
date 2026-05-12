@@ -5,13 +5,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import wx_content_mesh.app as app_module
-from wx_content_mesh.db import Base
-from wx_content_mesh.models import WeChatAccount
+import qiao_wechat.app as app_module
+from qiao_wechat.db import Base
+from qiao_wechat.models import WeChatAccount
 
 
 def test_create_draft_from_html_file_endpoint(monkeypatch, tmp_path: Path):
-    import wx_content_mesh.services.publisher as publisher_module
+    import qiao_wechat.services.publisher as publisher_module
 
     engine = create_engine(
         "sqlite://",

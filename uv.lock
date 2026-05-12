@@ -1160,7 +1160,7 @@ wheels = [
 ]
 
 [[package]]
-name = "wx-content-mesh"
+name = "qiao-wechat"
 version = "0.3.0"
 source = { editable = "." }
 dependencies = [

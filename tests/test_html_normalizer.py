@@ -1,4 +1,4 @@
-from wx_content_mesh.services.html_normalizer import HtmlNormalizer
+from qiao_wechat.services.html_normalizer import HtmlNormalizer
 
 
 def test_normalize_moves_img_dimensions_to_style_and_restores_src():

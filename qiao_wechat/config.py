@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="WCM_", extra="ignore")
 
-    database_url: str = "sqlite:///./data/wx_content_mesh.db"
+    database_url: str = "sqlite:///./data/qiao_wechat.db"
     output_dir: Path = Path("./outputs")
     upload_dir: Path = Path("./uploads")
     source_repo_dir: Path = Path("/srv/self-media-exchange/inbox/xueyu-gongzhonghao-receive")
